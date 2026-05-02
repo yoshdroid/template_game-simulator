@@ -1,0 +1,32 @@
+template_game_simulator 実装ログ
+
+仕様書に基づき、Python版の小さなゲームシミュレータ雛形を作成した。
+
+実装内容:
+- template/master.py を追加し、プレイヤー指定、seed、step、round、casual_match を処理する親プログラムを実装。
+- template/simulator/rps.py を追加し、2人対戦のじゃんけんシミュレータと勝敗結果データを実装。
+- template/players/random_player.py と rock_player.py を追加し、JSON Lines/stdin/stdoutで通信する子プログラム雛形を実装。
+- 子プログラムの通常ログは stderr に出すようにした。
+- 試合結果を results/result_*.json に保存し、game.log へ1行追記する処理を追加。
+- casual_matchでない場合に、子プログラム先頭ヘッダの LAST_GAME_DATE、PLAY_TIMES、WIN、POINT を更新する処理を追加。
+- Docker Desktop利用を想定した暫定 runner として template/run_player_docker.ps1 を追加。
+- tests/test_rps.py と tests/test_summary.md を追加。
+- pytest.ini を追加し、テスト対象を tests ディレクトリに限定した。
+
+仮定した点:
+- 現時点のシミュレータは2人対戦のみ対応。
+- seed未指定時は実行日時から生成した整数を使う。
+- Docker隔離は暫定要件としてrunner雛形のみ用意し、master.pyの通常実行はローカルPythonプロセス起動とした。
+
+改善提案:
+- 今後、不特定ユーザ作成botを実行する段階では、master.pyからDocker runner経由で起動できるオプションを追加する。
+- JSON通信形式は今回 type 中心の最小形式にしたため、将来ゲーム種別が増えたら protocol.py とスキーマ検証を追加すると保守しやすい。
+
+動作確認:
+- python -m pytest -q で 8件成功。
+- python -m compileall template tests で構文チェック成功。
+- master.py から rock_player.py と random_player.py を起動し、JSON Lines/stdin/stdout通信で試合が完了することを確認。
+
+追加対応:
+- 今後別プロジェクトで仕組みを流用するためのREADME.mdを作成。
+- 実行結果やPythonキャッシュをGit管理から外すため .gitignore を作成。

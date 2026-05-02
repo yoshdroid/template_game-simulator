@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+pytest-cache-files-*/
+
+results/
+game.log
+
+.venv/
+venv/
+env/
+
+.DS_Store
+Thumbs.db

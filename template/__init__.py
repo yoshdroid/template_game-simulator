@@ -1,0 +1,1 @@
+"""Template game simulator package."""
