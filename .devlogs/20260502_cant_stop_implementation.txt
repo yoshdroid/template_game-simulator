@@ -19,5 +19,10 @@ Can't Stop simulator 実装ログ
 
 今後の改善提案:
 - human_player.py は stdin/stdout通信と同じコンソール上で入力するため、実運用では別UIかソケット経由に分離すると扱いやすい。
-- GUIは最終盤面表示の補助に留めたため、リアルタイム観戦をするなら simulator の各イベントをGUIへ流す仕組みを追加する。
 - choice payload の形式は今後 protocol.py に分離してスキーマ検証を入れると、bot作成者が増えても壊れにくい。
+
+リアルタイム観戦対応:
+- simulator.run_game に on_event コールバックを追加し、game_start、turn_start、dice、move、continue、burst、turn_end、game_end を逐次通知できるようにした。
+- GameResult に events を追加し、結果JSONにもイベント列を保存するようにした。
+- cant_stop/live_view.py を追加し、simulator を別スレッドで実行しながら Tkinter GUI に Queue 経由でイベントを流して盤面を更新するようにした。
+- gui.py の描画を再利用し、白ポーン、スコア、直近イベントのステータスを表示するようにした。

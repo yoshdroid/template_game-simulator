@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from random import Random
+from collections.abc import Callable
 from typing import Any, Protocol
 
 
@@ -56,6 +57,7 @@ class GameResult:
     results: tuple[PlayerResult, ...]
     winner_index: int | None
     turns: tuple[TurnRecord, ...]
+    events: tuple[dict[str, Any], ...]
     final_board: dict[str, Any]
     completed: bool
 
@@ -194,10 +196,18 @@ def run_game(
     *,
     seed: int | None = None,
     step: int | None = None,
+    on_event: Callable[[dict[str, Any]], None] | None = None,
 ) -> GameResult:
     rng = Random(seed)
     board = BoardState()
     turns: list[TurnRecord] = []
+    events: list[dict[str, Any]] = []
+
+    def emit(event: dict[str, Any]) -> None:
+        event = {"event_index": len(events), **event}
+        events.append(event)
+        if on_event is not None:
+            on_event(event)
 
     for index, player in enumerate(players):
         player.request({"type": "hello", "player_index": index, "color": PLAYER_COLORS[index]})
@@ -205,6 +215,14 @@ def run_game(
     current_player = 0
     completed = False
     winner_index: int | None = None
+    emit(
+        {
+            "type": "game_start",
+            "players": [player.name for player in players],
+            "colors": list(PLAYER_COLORS),
+            "board": public_board_state(board),
+        }
+    )
 
     while not completed:
         if step is not None and len(turns) >= step:
@@ -213,6 +231,14 @@ def run_game(
         player = players[current_player]
         pawns: dict[int, int] = {}
         player.notify({"type": "turn_start", "player_index": current_player, "board": public_board_state(board)})
+        emit(
+            {
+                "type": "turn_start",
+                "player_index": current_player,
+                "player_name": player.name,
+                "board": public_board_state(board),
+            }
+        )
 
         while True:
             if step is not None and len(turns) >= step:
@@ -220,8 +246,29 @@ def run_game(
 
             dice = tuple(rng.randint(1, 6) for _ in range(4))
             legal_options = legal_pair_options(board, current_player, pawns, dice)
+            emit(
+                {
+                    "type": "dice",
+                    "player_index": current_player,
+                    "player_name": player.name,
+                    "dice": list(dice),
+                    "options": [list(option) for option in legal_options],
+                    "pawns": {str(column): pos for column, pos in pawns.items()},
+                    "board": public_board_state(board, pawns),
+                }
+            )
             if not legal_options:
                 player.notify({"type": "burst", "dice": list(dice), "pawns": pawns, "board": public_board_state(board, pawns)})
+                emit(
+                    {
+                        "type": "burst",
+                        "player_index": current_player,
+                        "player_name": player.name,
+                        "dice": list(dice),
+                        "pawns": {str(column): pos for column, pos in pawns.items()},
+                        "board": public_board_state(board, pawns),
+                    }
+                )
                 turns.append(
                     TurnRecord(
                         player_index=current_player,
@@ -247,6 +294,17 @@ def run_game(
             chosen_sums = _parse_choice(response, legal_options)
             apply_pair_option(board, current_player, pawns, chosen_sums)
             player.notify({"type": "move", "sums": list(chosen_sums), "pawns": pawns, "board": public_board_state(board, pawns)})
+            emit(
+                {
+                    "type": "move",
+                    "player_index": current_player,
+                    "player_name": player.name,
+                    "dice": list(dice),
+                    "sums": list(chosen_sums),
+                    "pawns": {str(column): pos for column, pos in pawns.items()},
+                    "board": public_board_state(board, pawns),
+                }
+            )
 
             stop_response = player.request(
                 {
@@ -258,6 +316,16 @@ def run_game(
             if _parse_stop(stop_response):
                 claimed = commit_pawns(board, current_player, pawns)
                 player.notify({"type": "turn_end", "claimed": list(claimed), "board": public_board_state(board)})
+                emit(
+                    {
+                        "type": "turn_end",
+                        "player_index": current_player,
+                        "player_name": player.name,
+                        "action": "stop",
+                        "claimed": list(claimed),
+                        "board": public_board_state(board),
+                    }
+                )
                 turns.append(
                     TurnRecord(
                         player_index=current_player,
@@ -283,6 +351,16 @@ def run_game(
                     pawns=dict(pawns),
                 )
             )
+            emit(
+                {
+                    "type": "continue",
+                    "player_index": current_player,
+                    "player_name": player.name,
+                    "action": "roll",
+                    "pawns": {str(column): pos for column, pos in pawns.items()},
+                    "board": public_board_state(board, pawns),
+                }
+            )
 
         if step is not None and len(turns) >= step:
             break
@@ -304,12 +382,22 @@ def run_game(
     }
     for player in players:
         player.notify(final_message)
+    emit(
+        {
+            "type": "game_end",
+            "winner_index": winner_index,
+            "winner_name": players[winner_index].name if winner_index is not None else None,
+            "completed": completed,
+            "board": public_board_state(board),
+        }
+    )
 
     return GameResult(
         players=tuple(player.name for player in players),
         results=results,
         winner_index=winner_index,
         turns=tuple(turns),
+        events=tuple(events),
         final_board=public_board_state(board),
         completed=completed,
     )

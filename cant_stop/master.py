@@ -13,7 +13,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from simulator import GameResult, run_game
+try:
+    from .simulator import GameResult, run_game
+except ImportError:
+    from simulator import GameResult, run_game
 
 
 HEADER_KEYS = ("PLAYER_NAME", "VERSION", "FIRST_GAME_DATE", "LAST_GAME_DATE", "PLAY_TIMES", "WIN", "POINT")
@@ -162,6 +165,7 @@ def write_result_file(result: GameResult, output_dir: Path) -> Path:
         "winner_name": result.winner_name,
         "completed": result.completed,
         "final_board": result.final_board,
+        "events": result.events,
         "results": [
             {
                 "result": player_result.final_result,

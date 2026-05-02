@@ -148,6 +148,7 @@ cant_stop/
     master.py                  4人用の親プログラム
     simulator.py               Can't Stop のゲームロジック
     gui.py                     background.png の上にレーンを描画する補助GUI
+    live_view.py               進行中のイベントを受け取って盤面をリアルタイム表示
     view_result.py             結果JSONから最終盤面を表示する補助スクリプト
     background.png             GUI背景画像
     players/
@@ -169,6 +170,14 @@ python cant_stop\master.py --player1 cant_stop\players\cautious_player.py --play
 ```powershell
 python cant_stop\master.py --player1 cant_stop\players\cautious_player.py --player2 cant_stop\players\aggressive_player.py --player3 cant_stop\players\theory_player.py --player4 cant_stop\players\random_player.py --seed 123 --step 20 --casual_match
 ```
+
+リアルタイム観戦:
+
+```powershell
+python cant_stop\live_view.py --player1 cant_stop\players\cautious_player.py --player2 cant_stop\players\aggressive_player.py --player3 cant_stop\players\theory_player.py --player4 cant_stop\players\random_player.py --seed 123 --delay 350 --casual_match
+```
+
+`--delay` はイベント表示間隔のミリ秒です。短く試す場合は `--step 30` も併用できます。
 
 結果JSONの最終盤面をGUI表示する例:
 

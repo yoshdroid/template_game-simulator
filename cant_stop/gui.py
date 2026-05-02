@@ -31,7 +31,7 @@ def _cell_y(position: int, height: int) -> float:
     return BOARD_BOTTOM - gap * (position - 1)
 
 
-def draw_board(canvas: tk.Canvas, board: dict[str, Any]) -> None:
+def draw_board(canvas: tk.Canvas, board: dict[str, Any], players: list[str] | None = None, status: str = "") -> None:
     for index, column in enumerate(COLUMNS):
         height = COLUMN_HEIGHTS[column]
         x = _lane_x(index)
@@ -62,6 +62,47 @@ def draw_board(canvas: tk.Canvas, board: dict[str, Any]) -> None:
         color = PLAYER_COLORS[int(player_index) % len(PLAYER_COLORS)]
         canvas.create_rectangle(x - 18, y - 18, x + 18, y + 18, fill=color, outline="#ffffff", width=2)
 
+    pawns = board.get("pawns") or {}
+    for raw_column, position in pawns.items():
+        column = int(raw_column)
+        if column not in COLUMN_HEIGHTS:
+            continue
+        x = _lane_x(COLUMNS.index(column))
+        y = _cell_y(int(position), COLUMN_HEIGHTS[column])
+        canvas.create_oval(x - 12, y - 12, x + 12, y + 12, fill="#ffffff", outline="#111111", width=2)
+
+    scores = board.get("scores") or []
+    for index, score in enumerate(scores):
+        color = PLAYER_COLORS[index % len(PLAYER_COLORS)]
+        name = players[index] if players and index < len(players) else f"P{index + 1}"
+        canvas.create_text(
+            28,
+            42 + index * 28,
+            text=f"{name}: {score}",
+            fill=color,
+            anchor="w",
+            font=("Segoe UI", 12, "bold"),
+        )
+
+    if status:
+        canvas.create_text(
+            CANVAS_WIDTH // 2,
+            28,
+            text=status,
+            fill="#ffffff",
+            font=("Segoe UI", 15, "bold"),
+        )
+
+
+def draw_scene(canvas: tk.Canvas, board: dict[str, Any], players: list[str] | None = None, status: str = "") -> None:
+    canvas.delete("all")
+    background = getattr(canvas, "background", None)
+    if background is not None:
+        canvas.create_image(0, 0, image=background, anchor="nw")
+    else:
+        canvas.configure(bg="#20242a")
+    draw_board(canvas, board, players=players, status=status)
+
 
 def show_board(board: dict[str, Any]) -> None:
     root = tk.Tk()
@@ -70,9 +111,8 @@ def show_board(board: dict[str, Any]) -> None:
     canvas.pack(fill="both", expand=True)
     if BACKGROUND_PATH.exists():
         background = tk.PhotoImage(file=str(BACKGROUND_PATH))
-        canvas.create_image(0, 0, image=background, anchor="nw")
         canvas.background = background
     else:
         canvas.configure(bg="#20242a")
-    draw_board(canvas, board)
+    draw_scene(canvas, board)
     root.mainloop()

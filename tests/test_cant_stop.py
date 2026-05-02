@@ -69,10 +69,14 @@ def test_advance_column_starts_from_player_progress():
 
 def test_run_game_with_step_records_turns_and_final_board():
     players = tuple(FakePlayer(f"p{index}") for index in range(4))
+    events = []
 
-    result = run_game(players, seed=1, step=4)
+    result = run_game(players, seed=1, step=4, on_event=events.append)
 
     assert len(result.turns) == 4
     assert result.completed is False
+    assert result.events == tuple(events)
+    assert result.events[0]["type"] == "game_start"
+    assert result.events[-1]["type"] == "game_end"
     assert result.final_board["scores"] == [0, 0, 0, 0]
     assert all(player.requests[0]["type"] == "hello" for player in players)
