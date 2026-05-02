@@ -10,11 +10,11 @@ from bot_base import run_player
 ########################################
 PLAYER_NAME = "cant_stop_random_player"
 VERSION = "1.0"
-FIRST_GAME_DATE = ""
-LAST_GAME_DATE = '2026/05/03 00:41'
-PLAY_TIMES = 3
+FIRST_GAME_DATE = '2026/05/03 01:00'
+LAST_GAME_DATE = '2026/05/03 01:03'
+PLAY_TIMES = 7
 WIN = 0
-POINT = 2
+POINT = 7
 
 
 def strategy(message):
