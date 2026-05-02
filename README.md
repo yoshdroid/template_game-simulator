@@ -150,6 +150,7 @@ cant_stop/
     gui.py                     background.png の上にレーンを描画する補助GUI
     live_view.py               進行中のイベントを受け取って盤面をリアルタイム表示
     view_result.py             結果JSONから最終盤面を表示する補助スクリプト
+    view_replay.py             結果JSONのイベント列から盤面リプレイを表示する補助スクリプト
     background.png             GUI背景画像
     players/
         cautious_player.py     75%でターン終了する慎重派
@@ -196,5 +197,17 @@ python cant_stop\live_view.py --player1 cant_stop\players\cautious_player.py --p
 ```powershell
 python cant_stop\view_result.py results\cant_stop_result_YYYYMMDD_HHMMSS.json
 ```
+
+結果JSONのリプレイをGUI表示する例:
+
+```powershell
+python cant_stop\view_replay.py results\cant_stop_result_YYYYMMDD_HHMMSS.json --delay 350
+```
+
+リプレイ操作:
+- `Space`: 再生/一時停止
+- `Right` / `Left`: 1イベント進む/戻る
+- `Home` / `End`: 先頭/末尾へ移動
+- `Esc`: 閉じる
 
 GUIは `cant_stop/background.png` を背景にして、2〜12の11本レーンを左から順に描画します。
