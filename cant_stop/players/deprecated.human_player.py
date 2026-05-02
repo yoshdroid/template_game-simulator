@@ -1,3 +1,4 @@
+# Console prototype. Prefer human_tk_player.py for normal play.
 from __future__ import annotations
 
 import argparse
