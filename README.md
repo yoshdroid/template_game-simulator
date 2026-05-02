@@ -138,3 +138,42 @@ POINT = 0
 ```
 
 現時点の `master.py` は通常のローカル Python プロセスとして子botを起動します。将来、不特定ユーザの bot を扱う段階では、`master.py` に Docker runner 経由で起動するオプションを追加してください。
+
+## Can't Stop サンプル
+
+`cant_stop/` 以下に、テンプレート機構を流用した別 simulator のサンプルを追加しています。
+
+```text
+cant_stop/
+    master.py                  4人用の親プログラム
+    simulator.py               Can't Stop のゲームロジック
+    gui.py                     background.png の上にレーンを描画する補助GUI
+    view_result.py             結果JSONから最終盤面を表示する補助スクリプト
+    background.png             GUI背景画像
+    players/
+        cautious_player.py     75%でターン終了する慎重派
+        aggressive_player.py   25%でターン終了する過激派
+        theory_player.py       6/7/8にポーンがある時だけ継続寄りになる理論派
+        random_player.py       すべてランダムに決める適当派
+        human_player.py        人間操作用の暫定雛形
+```
+
+実行例:
+
+```powershell
+python cant_stop\master.py --player1 cant_stop\players\cautious_player.py --player2 cant_stop\players\aggressive_player.py --player3 cant_stop\players\theory_player.py --player4 cant_stop\players\random_player.py --seed 123 --casual_match
+```
+
+短く動作確認したい時:
+
+```powershell
+python cant_stop\master.py --player1 cant_stop\players\cautious_player.py --player2 cant_stop\players\aggressive_player.py --player3 cant_stop\players\theory_player.py --player4 cant_stop\players\random_player.py --seed 123 --step 20 --casual_match
+```
+
+結果JSONの最終盤面をGUI表示する例:
+
+```powershell
+python cant_stop\view_result.py results\cant_stop_result_YYYYMMDD_HHMMSS.json
+```
+
+GUIは `cant_stop/background.png` を背景にして、2〜12の11本レーンを左から順に描画します。

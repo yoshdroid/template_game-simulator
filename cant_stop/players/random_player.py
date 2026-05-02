@@ -1,0 +1,30 @@
+from __future__ import annotations
+
+import random
+
+from bot_base import run_player
+
+
+########################################
+# Player Information & Records
+########################################
+PLAYER_NAME = "cant_stop_random_player"
+VERSION = "1.0"
+FIRST_GAME_DATE = ""
+LAST_GAME_DATE = ""
+PLAY_TIMES = 0
+WIN = 0
+POINT = 0
+
+
+def strategy(message):
+    if message.get("type") == "choose_pair":
+        options = message.get("options") or []
+        return {"type": "choose_pair", "sums": random.choice(options)}
+    if message.get("type") == "decide_continue":
+        return {"type": "decide_continue", "action": random.choice(["stop", "roll"])}
+    return None
+
+
+if __name__ == "__main__":
+    raise SystemExit(run_player(PLAYER_NAME, VERSION, strategy))

@@ -1,0 +1,23 @@
+Can't Stop simulator 実装ログ
+
+実装内容:
+- cant_stop/simulator.py を追加し、4人対戦のCan't Stopゲームロジックを実装。
+- 4 diceの3種類の分割、3ポーン制限、バースト、任意停止、列獲得、3列獲得勝利を実装。
+- cant_stop/master.py を追加し、template/master.py と同様のJSON Lines/stdin/stdout通信で4人の子プログラムを起動する親プログラムを実装。
+- サンプルプレイヤーとして慎重派、過激派、理論派、適当派を追加。
+- 人間操作を試すための human_player.py を追加。
+- background.png の上にレーンを描画する optional GUI と、結果JSON表示用 view_result.py を追加。
+- tests/test_cant_stop.py を追加し、分割候補、3ポーン制限、列獲得、既存進捗からの開始、step実行を確認。
+- README.md に Can't Stop サンプルの使い方を追記。
+
+ルール補足:
+- 指示書に不足していた細部は、Can't Stop標準ルールの概要を確認して補った。
+- 列は 2〜12 の11本、マス数は 3,5,7,9,11,13,11,9,7,5,3。
+- 獲得済み列には以後進行できない。
+- 進行できる分割候補がなければバーストし、そのターンのポーン進捗は失われる。
+- 停止時にポーン位置を自色コマとして確定し、頂上到達列を獲得する。
+
+今後の改善提案:
+- human_player.py は stdin/stdout通信と同じコンソール上で入力するため、実運用では別UIかソケット経由に分離すると扱いやすい。
+- GUIは最終盤面表示の補助に留めたため、リアルタイム観戦をするなら simulator の各イベントをGUIへ流す仕組みを追加する。
+- choice payload の形式は今後 protocol.py に分離してスキーマ検証を入れると、bot作成者が増えても壊れにくい。
