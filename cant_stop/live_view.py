@@ -25,6 +25,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--seed", type=int, default=None, help="Random seed. Defaults to current datetime.")
     parser.add_argument("--step", type=int, default=None, help="Stop simulator after this many recorded decisions.")
     parser.add_argument("--delay", type=int, default=350, help="Milliseconds between event draws.")
+    parser.add_argument("--timeout", type=float, default=5.0, help="Seconds to wait for each player response.")
+    parser.add_argument("--burst_pause", type=float, default=0.5, help="Seconds to pause after a burst event.")
     args, unknown = parser.parse_known_args()
     players: dict[int, str] = {}
     index = 0
@@ -113,8 +115,14 @@ class LiveViewer:
                     raise FileNotFoundError(f"player file not found: {path}")
             headers = [read_player_header(path) for path in player_paths]
             casual_match = self.args.casual_match or len(set(player_paths)) != len(player_paths)
-            ports = [PlayerProcessPort(path, seed + index) for index, path in enumerate(player_paths)]
-            result = run_game(tuple(ports), seed=seed, step=self.args.step, on_event=self.events.put)
+            ports = [PlayerProcessPort(path, seed + index, timeout_seconds=self.args.timeout) for index, path in enumerate(player_paths)]
+            result = run_game(
+                tuple(ports),
+                seed=seed,
+                step=self.args.step,
+                on_event=self.events.put,
+                burst_pause_seconds=self.args.burst_pause,
+            )
             result_path = write_result_file(result, Path(__file__).resolve().parent.parent / "results")
             for port in ports:
                 port.request({"type": "bye"})

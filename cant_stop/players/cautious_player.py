@@ -11,8 +11,8 @@ from bot_base import choose_highest_option, run_player
 PLAYER_NAME = "cautious_player"
 VERSION = "1.0"
 FIRST_GAME_DATE = ""
-LAST_GAME_DATE = ""
-PLAY_TIMES = 0
+LAST_GAME_DATE = '2026/05/03 00:41'
+PLAY_TIMES = 3
 WIN = 0
 POINT = 0
 

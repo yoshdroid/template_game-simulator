@@ -95,7 +95,7 @@ POINT = 0
 
 更新ルール:
 
-- `FIRST_GAME_DATE`: blankだったら試合実行日時で上書き
+- `FIRST_GAME_DATE`: 空文字の場合だけ試合実行日時で上書き。すでに値がある場合は保持
 - `LAST_GAME_DATE`: 試合実行日時で上書き
 - `PLAY_TIMES`: `+1`
 - `WIN`: 最終勝者なら `+1`
@@ -157,6 +157,7 @@ cant_stop/
         theory_player.py       6/7/8にポーンがある時だけ継続寄りになる理論派
         random_player.py       すべてランダムに決める適当派
         human_player.py        人間操作用の暫定雛形
+        human_tk_player.py     別ウィンドウで操作する人間プレイヤー
 ```
 
 実行例:
@@ -178,6 +179,15 @@ python cant_stop\live_view.py --player1 cant_stop\players\cautious_player.py --p
 ```
 
 `--delay` はイベント表示間隔のミリ秒です。短く試す場合は `--step 30` も併用できます。
+
+人間プレイヤーを1人混ぜる例:
+
+```powershell
+python cant_stop\live_view.py --player1 cant_stop\players\cautious_player.py --player2 cant_stop\players\aggressive_player.py --player3 cant_stop\players\theory_player.py --player4 cant_stop\players\human_tk_player.py --seed 123 --timeout 600 --delay 350 --casual_match
+```
+
+`human_tk_player.py` は親との stdin/stdout JSON Lines 通信を維持しつつ、選択操作だけ別Tkinterウィンドウで行います。人間の入力待ちがあるため、`--timeout` は長めに指定してください。
+自分の手番以外では操作情報を隠し、ボタンを無効化します。バースト時はGUIに表示され、`live_view.py` では既定で0.5秒停止します。停止時間は `--burst_pause` で調整できます。
 
 結果JSONの最終盤面をGUI表示する例:
 

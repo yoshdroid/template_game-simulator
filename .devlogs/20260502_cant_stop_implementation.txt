@@ -26,3 +26,14 @@ Can't Stop simulator 実装ログ
 - GameResult に events を追加し、結果JSONにもイベント列を保存するようにした。
 - cant_stop/live_view.py を追加し、simulator を別スレッドで実行しながら Tkinter GUI に Queue 経由でイベントを流して盤面を更新するようにした。
 - gui.py の描画を再利用し、白ポーン、スコア、直近イベントのステータスを表示するようにした。
+
+人間操作UI対応:
+- cant_stop/players/human_tk_player.py を追加し、stdin/stdout通信を保ったまま、選択操作だけ別Tkinterウィンドウで行えるようにした。
+- choose_pair では分割候補をボタン表示し、decide_continue では Stop / Roll ボタンを表示する。
+- master.py と live_view.py に --timeout を追加し、人間操作待ちで5秒timeoutしないように調整可能にした。
+- human_tk_player.py は自分の手番以外ではダイス目、ポーン、スコアを非表示にし、操作ボタンを無効化するようにした。
+- バースト時には human_tk_player.py に BURST 表示を出し、0.5秒後に待機表示へ戻すようにした。
+- simulator.run_game に burst_pause_seconds を追加し、live_view.py では既定でバーストイベント後に0.5秒停止するようにした。
+
+ヘッダ更新対応:
+- playerヘッダ更新時、FIRST_GAME_DATE が空文字なら LAST_GAME_DATE と同じ日時で初回更新し、既存値がある場合は保持するようにした。

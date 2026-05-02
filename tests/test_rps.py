@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
+from template.master import update_player_header
 from template.simulator.rps import judge, run_match
 
 
@@ -70,3 +73,34 @@ def test_run_match_step_stops_early_and_uses_current_leader():
 def test_run_match_rejects_invalid_target():
     with pytest.raises(ValueError):
         run_match(FakePlayer("p1", []), FakePlayer("p2", []), target_wins=0)
+
+
+def test_template_update_player_header_sets_first_game_date_only_when_empty():
+    player = Path("tests/_tmp_template_player_header.py")
+    try:
+        player.write_text(
+            "\n".join(
+                [
+                    'PLAYER_NAME = "sample"',
+                    'FIRST_GAME_DATE = ""',
+                    'LAST_GAME_DATE = ""',
+                    "PLAY_TIMES = 0",
+                    "WIN = 0",
+                    "POINT = 0",
+                    "",
+                ]
+            ),
+            encoding="utf-8",
+        )
+
+        update_player_header(player, "2026/05/03 01:23", "win", 2)
+        update_player_header(player, "2026/05/04 02:34", "lose", 1)
+        text = player.read_text(encoding="utf-8")
+
+        assert "FIRST_GAME_DATE = '2026/05/03 01:23'" in text
+        assert "LAST_GAME_DATE = '2026/05/04 02:34'" in text
+        assert "PLAY_TIMES = 2" in text
+        assert "WIN = 1" in text
+        assert "POINT = 3" in text
+    finally:
+        player.unlink(missing_ok=True)

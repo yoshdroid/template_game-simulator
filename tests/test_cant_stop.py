@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from pathlib import Path
+
+from cant_stop.master import update_player_header
 from cant_stop.simulator import (
     BoardState,
     advance_column,
@@ -80,3 +83,42 @@ def test_run_game_with_step_records_turns_and_final_board():
     assert result.events[-1]["type"] == "game_end"
     assert result.final_board["scores"] == [0, 0, 0, 0]
     assert all(player.requests[0]["type"] == "hello" for player in players)
+
+
+def test_update_player_header_sets_first_game_date_only_when_empty():
+    player = Path("tests/_tmp_player_header.py")
+    try:
+        player.write_text(
+            "\n".join(
+                [
+                    'PLAYER_NAME = "sample"',
+                    'FIRST_GAME_DATE = ""',
+                    'LAST_GAME_DATE = ""',
+                    "PLAY_TIMES = 0",
+                    "WIN = 0",
+                    "POINT = 0",
+                    "",
+                ]
+            ),
+            encoding="utf-8",
+        )
+
+        update_player_header(player, "2026/05/03 01:23", "win", 2)
+        text = player.read_text(encoding="utf-8")
+
+        assert "FIRST_GAME_DATE = '2026/05/03 01:23'" in text
+        assert "LAST_GAME_DATE = '2026/05/03 01:23'" in text
+        assert "PLAY_TIMES = 1" in text
+        assert "WIN = 1" in text
+        assert "POINT = 2" in text
+
+        update_player_header(player, "2026/05/04 02:34", "lose", 1)
+        text = player.read_text(encoding="utf-8")
+
+        assert "FIRST_GAME_DATE = '2026/05/03 01:23'" in text
+        assert "LAST_GAME_DATE = '2026/05/04 02:34'" in text
+        assert "PLAY_TIMES = 2" in text
+        assert "WIN = 1" in text
+        assert "POINT = 3" in text
+    finally:
+        player.unlink(missing_ok=True)

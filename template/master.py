@@ -14,7 +14,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from simulator.rps import RPSMatchResult, run_match
+try:
+    from .simulator.rps import RPSMatchResult, run_match
+except ImportError:
+    from simulator.rps import RPSMatchResult, run_match
 
 
 HEADER_KEYS = ("PLAYER_NAME", "VERSION", "FIRST_GAME_DATE", "LAST_GAME_DATE", "PLAY_TIMES", "WIN", "POINT")
@@ -139,7 +142,15 @@ def read_player_header(path: Path) -> PlayerHeader:
 
 def update_player_header(path: Path, now_text: str, result: str, point_delta: int) -> None:
     text = path.read_text(encoding="utf-8")
+
+    def first_game_date_value(value: str) -> str:
+        try:
+            return repr(now_text) if ast.literal_eval(value) == "" else value
+        except (SyntaxError, ValueError):
+            return value
+
     replacements = {
+        "FIRST_GAME_DATE": first_game_date_value,
         "LAST_GAME_DATE": repr(now_text),
         "PLAY_TIMES": lambda value: str(int(value) + 1),
         "WIN": lambda value: str(int(value) + (1 if result == "win" else 0)),
@@ -153,7 +164,7 @@ def update_player_header(path: Path, now_text: str, result: str, point_delta: in
         new_value = replacement(current) if callable(replacement) else replacement
         return f"{key} = {new_value}"
 
-    updated = re.sub(r"^(LAST_GAME_DATE|PLAY_TIMES|WIN|POINT)\s*=\s*(.+)$", replace_line, text, flags=re.MULTILINE)
+    updated = re.sub(r"^(FIRST_GAME_DATE|LAST_GAME_DATE|PLAY_TIMES|WIN|POINT)\s*=\s*(.+)$", replace_line, text, flags=re.MULTILINE)
     path.write_text(updated, encoding="utf-8")
 
 

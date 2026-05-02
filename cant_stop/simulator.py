@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from random import Random
 from collections.abc import Callable
+from time import sleep
 from typing import Any, Protocol
 
 
@@ -197,6 +198,7 @@ def run_game(
     seed: int | None = None,
     step: int | None = None,
     on_event: Callable[[dict[str, Any]], None] | None = None,
+    burst_pause_seconds: float = 0.0,
 ) -> GameResult:
     rng = Random(seed)
     board = BoardState()
@@ -269,6 +271,8 @@ def run_game(
                         "board": public_board_state(board, pawns),
                     }
                 )
+                if burst_pause_seconds > 0:
+                    sleep(burst_pause_seconds)
                 turns.append(
                     TurnRecord(
                         player_index=current_player,

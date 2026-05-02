@@ -93,6 +93,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--casual_match", action="store_true", help="Do not update player header records.")
     parser.add_argument("--seed", type=int, default=None, help="Random seed. Defaults to current datetime.")
     parser.add_argument("--step", type=int, default=None, help="Stop simulator after this many recorded decisions.")
+    parser.add_argument("--timeout", type=float, default=5.0, help="Seconds to wait for each player response.")
+    parser.add_argument("--burst_pause", type=float, default=0.0, help="Seconds to pause after a burst event.")
     args, unknown = parser.parse_known_args(argv)
     players: dict[int, str] = {}
     index = 0
@@ -138,7 +140,15 @@ def read_player_header(path: Path) -> PlayerHeader:
 
 def update_player_header(path: Path, now_text: str, result: str, point_delta: int) -> None:
     text = path.read_text(encoding="utf-8")
+
+    def first_game_date_value(value: str) -> str:
+        try:
+            return repr(now_text) if ast.literal_eval(value) == "" else value
+        except (SyntaxError, ValueError):
+            return value
+
     replacements = {
+        "FIRST_GAME_DATE": first_game_date_value,
         "LAST_GAME_DATE": repr(now_text),
         "PLAY_TIMES": lambda value: str(int(value) + 1),
         "WIN": lambda value: str(int(value) + (1 if result == "win" else 0)),
@@ -152,7 +162,7 @@ def update_player_header(path: Path, now_text: str, result: str, point_delta: in
         new_value = replacement(current) if callable(replacement) else replacement
         return f"{key} = {new_value}"
 
-    updated = re.sub(r"^(LAST_GAME_DATE|PLAY_TIMES|WIN|POINT)\s*=\s*(.+)$", replace_line, text, flags=re.MULTILINE)
+    updated = re.sub(r"^(FIRST_GAME_DATE|LAST_GAME_DATE|PLAY_TIMES|WIN|POINT)\s*=\s*(.+)$", replace_line, text, flags=re.MULTILINE)
     path.write_text(updated, encoding="utf-8")
 
 
@@ -210,9 +220,9 @@ def main(argv: list[str] | None = None) -> int:
 
     headers = [read_player_header(path) for path in player_paths]
     casual_match = args.casual_match or len(set(player_paths)) != len(player_paths)
-    ports = [PlayerProcessPort(path, seed + index) for index, path in enumerate(player_paths)]
+    ports = [PlayerProcessPort(path, seed + index, timeout_seconds=args.timeout) for index, path in enumerate(player_paths)]
     try:
-        result = run_game(tuple(ports), seed=seed, step=args.step)
+        result = run_game(tuple(ports), seed=seed, step=args.step, burst_pause_seconds=args.burst_pause)
         result_path = write_result_file(result, ROOT_DIR / "results")
         for port in ports:
             port.request({"type": "bye"})
