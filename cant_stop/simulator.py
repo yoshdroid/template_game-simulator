@@ -143,13 +143,28 @@ def apply_pair_option(
     board: BoardState,
     player_index: int,
     pawns: dict[int, int],
-    chosen_sums: tuple[int, int],
+    chosen_sums: tuple[int, ...],
 ) -> tuple[int, ...]:
     advanced = []
     for column in chosen_sums:
         if advance_column(board, player_index, pawns, column):
             advanced.append(column)
     return tuple(advanced)
+
+
+def column_choice_options(
+    board: BoardState,
+    player_index: int,
+    pawns: dict[int, int],
+    chosen_sums: tuple[int, int],
+) -> tuple[int, ...]:
+    if len(pawns) != 2:
+        return ()
+    new_columns = tuple(dict.fromkeys(column for column in chosen_sums if column not in pawns))
+    if len(new_columns) < 2:
+        return ()
+    options = tuple(column for column in new_columns if can_advance_column(board, player_index, pawns, column))
+    return options if len(options) >= 2 else ()
 
 
 def commit_pawns(board: BoardState, player_index: int, pawns: dict[int, int]) -> tuple[int, ...]:
@@ -190,6 +205,15 @@ def _parse_choice(response: dict[str, Any], legal_options: tuple[tuple[int, int]
 def _parse_stop(response: dict[str, Any]) -> bool:
     action = str(response.get("action", response.get("choice", "roll"))).lower()
     return action in {"stop", "end", "bank"}
+
+
+def _parse_column_choice(response: dict[str, Any], options: tuple[int, ...]) -> int:
+    raw = response.get("column", response.get("choice"))
+    try:
+        column = int(raw)
+    except (TypeError, ValueError):
+        return options[0]
+    return column if column in options else options[0]
 
 
 def run_game(
@@ -296,8 +320,46 @@ def run_game(
                 }
             )
             chosen_sums = _parse_choice(response, legal_options)
-            apply_pair_option(board, current_player, pawns, chosen_sums)
-            player.notify({"type": "move", "sums": list(chosen_sums), "pawns": pawns, "board": public_board_state(board, pawns)})
+            column_options = column_choice_options(board, current_player, pawns, chosen_sums)
+            selected_column: int | None = None
+            if column_options:
+                column_response = player.request(
+                    {
+                        "type": "choose_column",
+                        "dice": list(dice),
+                        "sums": list(chosen_sums),
+                        "columns": list(column_options),
+                        "pawns": pawns,
+                        "board": public_board_state(board, pawns),
+                    }
+                )
+                selected_column = _parse_column_choice(column_response, column_options)
+                emit(
+                    {
+                        "type": "choose_column",
+                        "player_index": current_player,
+                        "player_name": player.name,
+                        "dice": list(dice),
+                        "sums": list(chosen_sums),
+                        "columns": list(column_options),
+                        "selected_column": selected_column,
+                        "pawns": {str(column): pos for column, pos in pawns.items()},
+                        "board": public_board_state(board, pawns),
+                    }
+                )
+                advanced = apply_pair_option(board, current_player, pawns, (selected_column,))
+            else:
+                advanced = apply_pair_option(board, current_player, pawns, chosen_sums)
+            player.notify(
+                {
+                    "type": "move",
+                    "sums": list(chosen_sums),
+                    "advanced": list(advanced),
+                    "selected_column": selected_column,
+                    "pawns": pawns,
+                    "board": public_board_state(board, pawns),
+                }
+            )
             emit(
                 {
                     "type": "move",
@@ -305,6 +367,8 @@ def run_game(
                     "player_name": player.name,
                     "dice": list(dice),
                     "sums": list(chosen_sums),
+                    "advanced": list(advanced),
+                    "selected_column": selected_column,
                     "pawns": {str(column): pos for column, pos in pawns.items()},
                     "board": public_board_state(board, pawns),
                 }

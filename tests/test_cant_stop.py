@@ -6,6 +6,8 @@ from cant_stop.master import update_player_header
 from cant_stop.simulator import (
     BoardState,
     advance_column,
+    apply_pair_option,
+    column_choice_options,
     commit_pawns,
     dice_pair_options,
     legal_pair_options,
@@ -25,6 +27,8 @@ class FakePlayer:
             return {"type": "hello", "player_name": self.name}
         if message["type"] == "choose_pair":
             return {"type": "choose_pair", "sums": message["options"][0]}
+        if message["type"] == "choose_column":
+            return {"type": "choose_column", "column": message["columns"][0]}
         if message["type"] == "decide_continue":
             return {"type": "decide_continue", "action": "stop"}
         if message["type"] == "bye":
@@ -68,6 +72,18 @@ def test_advance_column_starts_from_player_progress():
 
     assert advance_column(board, 0, pawns, 7) is True
     assert pawns[7] == 5
+
+
+def test_column_choice_options_when_two_pawns_and_two_new_columns_are_possible():
+    board = BoardState()
+    pawns = {6: 1, 8: 1}
+
+    options = column_choice_options(board, 0, pawns, (5, 9))
+    advanced = apply_pair_option(board, 0, pawns, (options[1],))
+
+    assert options == (5, 9)
+    assert advanced == (9,)
+    assert pawns == {6: 1, 8: 1, 9: 1}
 
 
 def test_run_game_with_step_records_turns_and_final_board():

@@ -189,6 +189,8 @@ python cant_stop\live_view.py --player1 cant_stop\players\cautious_player.py --p
 `human_tk_player.py` は親との stdin/stdout JSON Lines 通信を維持しつつ、選択操作だけ別Tkinterウィンドウで行います。人間の入力待ちがあるため、`--timeout` は長めに指定してください。
 自分の手番以外では操作情報を隠し、ボタンを無効化します。バースト時はGUIに表示され、`live_view.py` では既定で0.5秒停止します。停止時間は `--burst_pause` で調整できます。
 
+2ポーン配置済みで、選んだ出目ペアのどちらのレーンも新規配置可能な場合は、親が追加で `choose_column` を要求します。`theory_player.py` は7に近いレーンを選び、その他のbotはランダムに選びます。`human_tk_player.py` ではレーン選択ボタンが表示されます。
+
 結果JSONの最終盤面をGUI表示する例:
 
 ```powershell

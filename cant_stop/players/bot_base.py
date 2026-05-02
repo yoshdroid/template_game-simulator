@@ -23,6 +23,11 @@ def choose_highest_option(message: dict[str, Any]) -> list[int]:
     return list(max(options, key=lambda option: (sum(option), option.count(6) + option.count(7) + option.count(8))))
 
 
+def choose_random_column(message: dict[str, Any]) -> int:
+    columns = message.get("columns") or []
+    return int(random.choice(columns)) if columns else 7
+
+
 def run_player(player_name: str, version: str, strategy: Strategy) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--seed", type=int, default=None)
@@ -39,6 +44,8 @@ def run_player(player_name: str, version: str, strategy: Strategy) -> int:
             response = {"type": "hello", "player_name": player_name, "version": version}
         elif message_type == "choose_pair":
             response = strategy(message) or {"type": "choose_pair", "sums": choose_highest_option(message)}
+        elif message_type == "choose_column":
+            response = strategy(message) or {"type": "choose_column", "column": choose_random_column(message)}
         elif message_type == "decide_continue":
             response = strategy(message) or {"type": "decide_continue", "action": "roll"}
         elif message_type == "turn_start":

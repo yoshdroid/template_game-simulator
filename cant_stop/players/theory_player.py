@@ -20,6 +20,10 @@ POINT = 10
 def strategy(message):
     if message.get("type") == "choose_pair":
         return {"type": "choose_pair", "sums": choose_highest_option(message)}
+    if message.get("type") == "choose_column":
+        columns = message.get("columns") or []
+        selected = min(columns, key=lambda column: (abs(int(column) - 7), int(column)))
+        return {"type": "choose_column", "column": selected}
     if message.get("type") == "decide_continue":
         pawn_columns = {int(column) for column in (message.get("pawns") or {})}
         stop_probability = 0.50 if pawn_columns & {6, 7, 8} else 0.80

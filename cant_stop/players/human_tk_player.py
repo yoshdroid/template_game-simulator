@@ -74,7 +74,7 @@ class HumanTkPlayer:
                 break
             message = json.loads(line)
             message_type = message.get("type")
-            if message_type in {"hello", "choose_pair", "decide_continue", "bye"}:
+            if message_type in {"hello", "choose_pair", "choose_column", "decide_continue", "bye"}:
                 response_queue: queue.Queue[dict[str, Any]] = queue.Queue()
                 self.inbox.put((message, response_queue))
                 response = response_queue.get()
@@ -110,6 +110,8 @@ class HumanTkPlayer:
             self._respond(response_queue, {"type": "hello", "player_name": PLAYER_NAME, "version": VERSION})
         elif message_type == "choose_pair":
             self._show_pair_choices(message, response_queue)
+        elif message_type == "choose_column":
+            self._show_column_choices(message, response_queue)
         elif message_type == "decide_continue":
             self._show_continue_choices(response_queue)
         elif message_type == "turn_start":
@@ -168,6 +170,20 @@ class HumanTkPlayer:
             text="Roll",
             command=lambda: self._respond(response_queue, {"type": "decide_continue", "action": "roll"}),
         ).pack(fill="x", pady=6)
+
+    def _show_column_choices(self, message: dict[str, Any], response_queue: queue.Queue[dict[str, Any]] | None) -> None:
+        self._clear_controls()
+        self._show_details()
+        columns = message.get("columns") or []
+        self.status_var.set("Only one new pawn can be placed. Choose a lane.")
+        ttk.Label(self.controls, text="Lane choice", font=("Segoe UI", 12, "bold")).pack(anchor="w", pady=(0, 8))
+        ttk.Label(self.controls, text=f"Pair: {message.get('sums')}").pack(anchor="w", pady=(0, 8))
+        for column in columns:
+            ttk.Button(
+                self.controls,
+                text=f"Lane {column}",
+                command=lambda selected=column: self._respond(response_queue, {"type": "choose_column", "column": selected}),
+            ).pack(fill="x", pady=4)
 
     def _update_state(self, message: dict[str, Any]) -> None:
         if "dice" in message:

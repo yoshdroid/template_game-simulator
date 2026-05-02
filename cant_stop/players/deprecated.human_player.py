@@ -38,6 +38,19 @@ def ask_continue(message):
     return {"type": "decide_continue", "action": "stop" if raw in {"y", "yes"} else "roll"}
 
 
+def ask_column(message):
+    columns = message.get("columns") or []
+    print(f"choose one lane from pair {message.get('sums')}: {columns}", file=sys.stderr)
+    raw = input("choose lane> ")
+    try:
+        selected = int(raw)
+    except ValueError:
+        selected = columns[0]
+    if selected not in columns:
+        selected = columns[0]
+    return {"type": "choose_column", "column": selected}
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--seed", type=int, default=None)
@@ -52,6 +65,8 @@ def main() -> int:
             response = {"type": "hello", "player_name": PLAYER_NAME, "version": VERSION}
         elif message_type == "choose_pair":
             response = ask_pair(message)
+        elif message_type == "choose_column":
+            response = ask_column(message)
         elif message_type == "decide_continue":
             response = ask_continue(message)
         elif message_type in {"turn_start", "move", "turn_end", "burst", "final"}:

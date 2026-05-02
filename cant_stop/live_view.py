@@ -66,6 +66,8 @@ def event_status(event: dict[str, Any]) -> str:
         return f"{player_name} rolls {event.get('dice')}"
     if event_type == "move":
         return f"{player_name} moves {event.get('sums')}"
+    if event_type == "choose_column":
+        return f"{player_name} chooses lane {event.get('selected_column')} from {event.get('columns')}"
     if event_type == "continue":
         return f"{player_name} rolls again"
     if event_type == "burst":
