@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import random
 
-from bot_base import choose_highest_option, run_player
+from bot_base import choose_highest_option, protocol, run_player
 
 
 ########################################
@@ -11,17 +11,18 @@ from bot_base import choose_highest_option, run_player
 PLAYER_NAME = "aggressive_player"
 VERSION = "1.0"
 FIRST_GAME_DATE = '2026/05/03 01:00'
-LAST_GAME_DATE = '2026/05/03 01:12'
-PLAY_TIMES = 8
-WIN = 5
-POINT = 17
+LAST_GAME_DATE = '2026/05/03 07:54'
+PLAY_TIMES = 10
+WIN = 7
+POINT = 24
 
 
 def strategy(message):
-    if message.get("type") == "choose_pair":
-        return {"type": "choose_pair", "sums": choose_highest_option(message)}
-    if message.get("type") == "decide_continue":
-        return {"type": "decide_continue", "action": "stop" if random.random() < 0.25 else "roll"}
+    if protocol.message_type(message) == protocol.CHOOSE_PAIR:
+        return protocol.make_choose_pair_response(choose_highest_option(message))
+    if protocol.message_type(message) == protocol.DECIDE_CONTINUE:
+        action = protocol.STOP if random.random() < 0.25 else protocol.ROLL
+        return protocol.make_decide_continue_response(action)
     return None
 
 

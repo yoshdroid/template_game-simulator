@@ -51,3 +51,9 @@ GUIレイアウト調整:
 リプレイ表示:
 - cant_stop/view_replay.py を追加し、結果JSONの events を順番に描画して盤面リプレイできるようにした。
 - Spaceで再生/停止、左右キーで前後移動、Home/Endで先頭/末尾移動、Escで終了できるようにした。
+
+プロトコル整理:
+- cant_stop/protocol.py を追加し、親子通信JSONの type 名、メッセージ生成関数、応答検証関数を集約した。
+- simulator.py は choose_pair、choose_column、decide_continue の子応答を protocol.py 経由で検証するようにした。
+- bot_base.py、サンプルbot、human_tk_player.py は protocol.py の定数と make_*_response を使って応答を返すようにした。
+- tests/test_cant_stop_protocol.py を追加し、正しい応答を受け入れ、不正な応答を拒否することを確認した。

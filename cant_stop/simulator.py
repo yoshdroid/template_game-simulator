@@ -6,6 +6,11 @@ from collections.abc import Callable
 from time import sleep
 from typing import Any, Protocol
 
+try:
+    from . import protocol
+except ImportError:
+    import protocol
+
 
 COLUMNS = tuple(range(2, 13))
 COLUMN_HEIGHTS = {
@@ -190,32 +195,6 @@ def public_board_state(board: BoardState, pawns: dict[int, int] | None = None) -
     }
 
 
-def _parse_choice(response: dict[str, Any], legal_options: tuple[tuple[int, int], ...]) -> tuple[int, int]:
-    raw = response.get("sums", response.get("choice"))
-    if isinstance(raw, str):
-        parts = raw.replace(",", " ").split()
-        raw = [int(part) for part in parts]
-    if isinstance(raw, (list, tuple)) and len(raw) == 2:
-        choice = tuple(sorted((int(raw[0]), int(raw[1]))))
-        if choice in legal_options:
-            return choice
-    return legal_options[0]
-
-
-def _parse_stop(response: dict[str, Any]) -> bool:
-    action = str(response.get("action", response.get("choice", "roll"))).lower()
-    return action in {"stop", "end", "bank"}
-
-
-def _parse_column_choice(response: dict[str, Any], options: tuple[int, ...]) -> int:
-    raw = response.get("column", response.get("choice"))
-    try:
-        column = int(raw)
-    except (TypeError, ValueError):
-        return options[0]
-    return column if column in options else options[0]
-
-
 def run_game(
     players: tuple[PlayerPort, PlayerPort, PlayerPort, PlayerPort],
     *,
@@ -236,7 +215,7 @@ def run_game(
             on_event(event)
 
     for index, player in enumerate(players):
-        player.request({"type": "hello", "player_index": index, "color": PLAYER_COLORS[index]})
+        player.request(protocol.make_hello_request(index, PLAYER_COLORS[index]))
 
     current_player = 0
     completed = False
@@ -256,7 +235,7 @@ def run_game(
 
         player = players[current_player]
         pawns: dict[int, int] = {}
-        player.notify({"type": "turn_start", "player_index": current_player, "board": public_board_state(board)})
+        player.notify({"type": protocol.TURN_START, "player_index": current_player, "board": public_board_state(board)})
         emit(
             {
                 "type": "turn_start",
@@ -284,7 +263,7 @@ def run_game(
                 }
             )
             if not legal_options:
-                player.notify({"type": "burst", "dice": list(dice), "pawns": pawns, "board": public_board_state(board, pawns)})
+                player.notify({"type": protocol.BURST, "dice": list(dice), "pawns": pawns, "board": public_board_state(board, pawns)})
                 emit(
                     {
                         "type": "burst",
@@ -311,29 +290,27 @@ def run_game(
                 break
 
             response = player.request(
-                {
-                    "type": "choose_pair",
-                    "dice": list(dice),
-                    "options": [list(option) for option in legal_options],
-                    "pawns": pawns,
-                    "board": public_board_state(board, pawns),
-                }
+                protocol.make_choose_pair_request(
+                    list(dice),
+                    [list(option) for option in legal_options],
+                    pawns,
+                    public_board_state(board, pawns),
+                )
             )
-            chosen_sums = _parse_choice(response, legal_options)
+            chosen_sums = protocol.parse_choose_pair_response(response, legal_options)
             column_options = column_choice_options(board, current_player, pawns, chosen_sums)
             selected_column: int | None = None
             if column_options:
                 column_response = player.request(
-                    {
-                        "type": "choose_column",
-                        "dice": list(dice),
-                        "sums": list(chosen_sums),
-                        "columns": list(column_options),
-                        "pawns": pawns,
-                        "board": public_board_state(board, pawns),
-                    }
+                    protocol.make_choose_column_request(
+                        list(dice),
+                        list(chosen_sums),
+                        list(column_options),
+                        pawns,
+                        public_board_state(board, pawns),
+                    )
                 )
-                selected_column = _parse_column_choice(column_response, column_options)
+                selected_column = protocol.parse_choose_column_response(column_response, column_options)
                 emit(
                     {
                         "type": "choose_column",
@@ -352,7 +329,7 @@ def run_game(
                 advanced = apply_pair_option(board, current_player, pawns, chosen_sums)
             player.notify(
                 {
-                    "type": "move",
+                    "type": protocol.MOVE,
                     "sums": list(chosen_sums),
                     "advanced": list(advanced),
                     "selected_column": selected_column,
@@ -375,15 +352,11 @@ def run_game(
             )
 
             stop_response = player.request(
-                {
-                    "type": "decide_continue",
-                    "pawns": pawns,
-                    "board": public_board_state(board, pawns),
-                }
+                protocol.make_decide_continue_request(pawns, public_board_state(board, pawns))
             )
-            if _parse_stop(stop_response):
+            if protocol.parse_decide_continue_response(stop_response) == protocol.STOP:
                 claimed = commit_pawns(board, current_player, pawns)
-                player.notify({"type": "turn_end", "claimed": list(claimed), "board": public_board_state(board)})
+                player.notify({"type": protocol.TURN_END, "claimed": list(claimed), "board": public_board_state(board)})
                 emit(
                     {
                         "type": "turn_end",
@@ -443,7 +416,7 @@ def run_game(
         for index in range(len(players))
     )
     final_message = {
-        "type": "final",
+        "type": protocol.FINAL,
         "winner_index": winner_index,
         "winner_name": players[winner_index].name if winner_index is not None else None,
         "board": public_board_state(board),

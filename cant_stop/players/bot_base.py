@@ -4,7 +4,14 @@ import argparse
 import json
 import random
 import sys
+from pathlib import Path
 from typing import Any, Callable
+
+try:
+    from cant_stop import protocol
+except ImportError:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    import protocol
 
 
 Strategy = Callable[[dict[str, Any]], dict[str, Any] | None]
@@ -39,38 +46,38 @@ def run_player(player_name: str, version: str, strategy: Strategy) -> int:
     print(f"({player_name}) ready", file=sys.stderr)
     for line in sys.stdin:
         message = json.loads(line)
-        message_type = message.get("type")
-        if message_type == "hello":
-            response = {"type": "hello", "player_name": player_name, "version": version}
-        elif message_type == "choose_pair":
-            response = strategy(message) or {"type": "choose_pair", "sums": choose_highest_option(message)}
-        elif message_type == "choose_column":
-            response = strategy(message) or {"type": "choose_column", "column": choose_random_column(message)}
-        elif message_type == "decide_continue":
-            response = strategy(message) or {"type": "decide_continue", "action": "roll"}
-        elif message_type == "turn_start":
+        message_type = protocol.message_type(message)
+        if message_type == protocol.HELLO:
+            response = protocol.make_hello_response(player_name, version)
+        elif message_type == protocol.CHOOSE_PAIR:
+            response = strategy(message) or protocol.make_choose_pair_response(choose_highest_option(message))
+        elif message_type == protocol.CHOOSE_COLUMN:
+            response = strategy(message) or protocol.make_choose_column_response(choose_random_column(message))
+        elif message_type == protocol.DECIDE_CONTINUE:
+            response = strategy(message) or protocol.make_decide_continue_response(protocol.ROLL)
+        elif message_type == protocol.TURN_START:
             print(f"({player_name}) turn start", file=sys.stderr)
             response = None
-        elif message_type == "move":
+        elif message_type == protocol.MOVE:
             print(f"({player_name}) move sums={message.get('sums')} pawns={message.get('pawns')}", file=sys.stderr)
             response = None
-        elif message_type == "turn_end":
+        elif message_type == protocol.TURN_END:
             print(f"({player_name}) turn end claimed={message.get('claimed')}", file=sys.stderr)
             response = None
-        elif message_type == "burst":
+        elif message_type == protocol.BURST:
             print(f"({player_name}) burst dice={message.get('dice')}", file=sys.stderr)
             response = None
-        elif message_type == "final":
+        elif message_type == protocol.FINAL:
             print(f"({player_name}) final winner={message.get('winner_name')}", file=sys.stderr)
             response = None
-        elif message_type == "bye":
+        elif message_type == protocol.BYE:
             print(f"({player_name}) bye", file=sys.stderr)
-            response = {"type": "bye", "player_name": player_name}
+            response = protocol.make_bye_response(player_name)
         else:
-            response = {"type": "error", "error": f"unknown message type: {message_type}"}
+            response = protocol.make_error_response(f"unknown message type: {message_type}")
 
         if response is not None:
             print(json.dumps(response, ensure_ascii=False), flush=True)
-        if message_type == "bye":
+        if message_type == protocol.BYE:
             break
     return 0

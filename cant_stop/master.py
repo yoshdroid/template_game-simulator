@@ -14,8 +14,10 @@ from pathlib import Path
 from typing import Any
 
 try:
+    from . import protocol
     from .simulator import GameResult, run_game
 except ImportError:
+    import protocol
     from simulator import GameResult, run_game
 
 
@@ -59,7 +61,7 @@ class PlayerProcessPort:
             try:
                 self._responses.put(json.loads(line))
             except json.JSONDecodeError:
-                self._responses.put({"type": "error", "error": f"invalid json from {self.path.name}: {line}"})
+                self._responses.put(protocol.make_error_response(f"invalid json from {self.path.name}: {line}"))
 
     def request(self, message: dict[str, Any]) -> dict[str, Any]:
         self.notify(message)
@@ -67,7 +69,7 @@ class PlayerProcessPort:
             response = self._responses.get(timeout=self.timeout_seconds)
         except queue.Empty as exc:
             raise TimeoutError(f"{self.path} did not respond to {message.get('type')}") from exc
-        if response.get("type") == "error":
+        if protocol.message_type(response) == protocol.ERROR:
             raise RuntimeError(str(response.get("error")))
         return response
 
@@ -225,7 +227,7 @@ def main(argv: list[str] | None = None) -> int:
         result = run_game(tuple(ports), seed=seed, step=args.step, burst_pause_seconds=args.burst_pause)
         result_path = write_result_file(result, ROOT_DIR / "results")
         for port in ports:
-            port.request({"type": "bye"})
+            port.request(protocol.make_bye_request())
     except Exception as exc:
         print(f"match failed: {exc}", file=sys.stderr)
         return 1

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import random
 
-from bot_base import run_player
+from bot_base import protocol, run_player
 
 
 ########################################
@@ -11,18 +11,18 @@ from bot_base import run_player
 PLAYER_NAME = "cant_stop_random_player"
 VERSION = "1.0"
 FIRST_GAME_DATE = '2026/05/03 01:00'
-LAST_GAME_DATE = '2026/05/03 01:15'
-PLAY_TIMES = 9
+LAST_GAME_DATE = '2026/05/03 07:54'
+PLAY_TIMES = 11
 WIN = 0
-POINT = 7
+POINT = 9
 
 
 def strategy(message):
-    if message.get("type") == "choose_pair":
+    if protocol.message_type(message) == protocol.CHOOSE_PAIR:
         options = message.get("options") or []
-        return {"type": "choose_pair", "sums": random.choice(options)}
-    if message.get("type") == "decide_continue":
-        return {"type": "decide_continue", "action": random.choice(["stop", "roll"])}
+        return protocol.make_choose_pair_response(random.choice(options))
+    if protocol.message_type(message) == protocol.DECIDE_CONTINUE:
+        return protocol.make_decide_continue_response(random.choice([protocol.STOP, protocol.ROLL]))
     return None
 
 

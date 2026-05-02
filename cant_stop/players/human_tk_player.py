@@ -7,8 +7,15 @@ import random
 import sys
 import threading
 import tkinter as tk
+from pathlib import Path
 from tkinter import ttk
 from typing import Any
+
+try:
+    from cant_stop import protocol
+except ImportError:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    import protocol
 
 
 ########################################
@@ -73,13 +80,13 @@ class HumanTkPlayer:
             if self.closed:
                 break
             message = json.loads(line)
-            message_type = message.get("type")
-            if message_type in {"hello", "choose_pair", "choose_column", "decide_continue", "bye"}:
+            message_type = protocol.message_type(message)
+            if message_type in {protocol.HELLO, protocol.CHOOSE_PAIR, protocol.CHOOSE_COLUMN, protocol.DECIDE_CONTINUE, protocol.BYE}:
                 response_queue: queue.Queue[dict[str, Any]] = queue.Queue()
                 self.inbox.put((message, response_queue))
                 response = response_queue.get()
                 print(json.dumps(response, ensure_ascii=False), flush=True)
-                if message_type == "bye":
+                if message_type == protocol.BYE:
                     break
             else:
                 self.inbox.put((message, None))
@@ -97,9 +104,9 @@ class HumanTkPlayer:
             self.root.after(50, self._poll_inbox)
 
     def _handle_message(self, message: dict[str, Any], response_queue: queue.Queue[dict[str, Any]] | None) -> None:
-        message_type = message.get("type")
+        message_type = protocol.message_type(message)
         self._update_state(message)
-        if message_type == "hello":
+        if message_type == protocol.HELLO:
             self.player_index = int(message.get("player_index", 0))
             self.color = PLAYER_COLORS[self.player_index % len(PLAYER_COLORS)]
             self.root.title(f"{PLAYER_NAME} P{self.player_index + 1} ({self.color})")
@@ -107,41 +114,41 @@ class HumanTkPlayer:
             self.status_var.set("Connected. Waiting for your turn.")
             self._hide_details()
             self._show_waiting_controls()
-            self._respond(response_queue, {"type": "hello", "player_name": PLAYER_NAME, "version": VERSION})
-        elif message_type == "choose_pair":
+            self._respond(response_queue, protocol.make_hello_response(PLAYER_NAME, VERSION))
+        elif message_type == protocol.CHOOSE_PAIR:
             self._show_pair_choices(message, response_queue)
-        elif message_type == "choose_column":
+        elif message_type == protocol.CHOOSE_COLUMN:
             self._show_column_choices(message, response_queue)
-        elif message_type == "decide_continue":
+        elif message_type == protocol.DECIDE_CONTINUE:
             self._show_continue_choices(response_queue)
-        elif message_type == "turn_start":
+        elif message_type == protocol.TURN_START:
             self.status_var.set("Your turn started.")
             self._show_details()
             self._show_waiting_controls("Waiting for dice...")
-        elif message_type == "move":
+        elif message_type == protocol.MOVE:
             self.status_var.set(f"Moved {message.get('sums')}.")
             self._show_details()
             self._show_waiting_controls("Waiting for next decision...")
-        elif message_type == "turn_end":
+        elif message_type == protocol.TURN_END:
             self.status_var.set(f"Turn ended. Claimed: {message.get('claimed') or []}")
             self._hide_details()
             self._show_waiting_controls()
-        elif message_type == "burst":
+        elif message_type == protocol.BURST:
             self.status_var.set(f"BURST! Dice: {message.get('dice')}")
             self._show_details()
             self._show_waiting_controls("Burst!")
             self.root.after(500, self._show_off_turn)
-        elif message_type == "final":
+        elif message_type == protocol.FINAL:
             winner = message.get("winner_name") or "unfinished"
             self.status_var.set(f"Game finished. Winner: {winner}")
             self._show_details()
             self._show_waiting_controls("Game finished")
-        elif message_type == "bye":
+        elif message_type == protocol.BYE:
             self.status_var.set("Bye.")
-            self._respond(response_queue, {"type": "bye", "player_name": PLAYER_NAME})
+            self._respond(response_queue, protocol.make_bye_response(PLAYER_NAME))
             self.root.after(300, self._on_close)
         else:
-            self._respond(response_queue, {"type": "error", "error": f"unknown message type: {message_type}"})
+            self._respond(response_queue, protocol.make_error_response(f"unknown message type: {message_type}"))
 
     def _show_pair_choices(self, message: dict[str, Any], response_queue: queue.Queue[dict[str, Any]] | None) -> None:
         self._clear_controls()
@@ -153,7 +160,7 @@ class HumanTkPlayer:
             ttk.Button(
                 self.controls,
                 text=f"{option[0]} + {option[1]}",
-                command=lambda selected=option: self._respond(response_queue, {"type": "choose_pair", "sums": selected}),
+                command=lambda selected=option: self._respond(response_queue, protocol.make_choose_pair_response(selected)),
             ).pack(fill="x", pady=4)
 
     def _show_continue_choices(self, response_queue: queue.Queue[dict[str, Any]] | None) -> None:
@@ -163,12 +170,12 @@ class HumanTkPlayer:
         ttk.Button(
             self.controls,
             text="Stop",
-            command=lambda: self._respond(response_queue, {"type": "decide_continue", "action": "stop"}),
+            command=lambda: self._respond(response_queue, protocol.make_decide_continue_response(protocol.STOP)),
         ).pack(fill="x", pady=6)
         ttk.Button(
             self.controls,
             text="Roll",
-            command=lambda: self._respond(response_queue, {"type": "decide_continue", "action": "roll"}),
+            command=lambda: self._respond(response_queue, protocol.make_decide_continue_response(protocol.ROLL)),
         ).pack(fill="x", pady=6)
 
     def _show_column_choices(self, message: dict[str, Any], response_queue: queue.Queue[dict[str, Any]] | None) -> None:
@@ -182,7 +189,7 @@ class HumanTkPlayer:
             ttk.Button(
                 self.controls,
                 text=f"Lane {column}",
-                command=lambda selected=column: self._respond(response_queue, {"type": "choose_column", "column": selected}),
+                command=lambda selected=column: self._respond(response_queue, protocol.make_choose_column_response(selected)),
             ).pack(fill="x", pady=4)
 
     def _update_state(self, message: dict[str, Any]) -> None:

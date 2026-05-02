@@ -5,6 +5,13 @@ import argparse
 import json
 import random
 import sys
+from pathlib import Path
+
+try:
+    from cant_stop import protocol
+except ImportError:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    import protocol
 
 
 ########################################
@@ -29,13 +36,14 @@ def ask_pair(message):
         selected = options[int(raw) - 1]
     except (ValueError, IndexError):
         selected = options[0]
-    return {"type": "choose_pair", "sums": selected}
+    return protocol.make_choose_pair_response(selected)
 
 
 def ask_continue(message):
     print(f"pawns: {message.get('pawns')}", file=sys.stderr)
     raw = input("stop? [y/N]> ").strip().lower()
-    return {"type": "decide_continue", "action": "stop" if raw in {"y", "yes"} else "roll"}
+    action = protocol.STOP if raw in {"y", "yes"} else protocol.ROLL
+    return protocol.make_decide_continue_response(action)
 
 
 def ask_column(message):
@@ -48,7 +56,7 @@ def ask_column(message):
         selected = columns[0]
     if selected not in columns:
         selected = columns[0]
-    return {"type": "choose_column", "column": selected}
+    return protocol.make_choose_column_response(selected)
 
 
 def main() -> int:
@@ -60,26 +68,26 @@ def main() -> int:
 
     for line in sys.stdin:
         message = json.loads(line)
-        message_type = message.get("type")
-        if message_type == "hello":
-            response = {"type": "hello", "player_name": PLAYER_NAME, "version": VERSION}
-        elif message_type == "choose_pair":
+        message_type = protocol.message_type(message)
+        if message_type == protocol.HELLO:
+            response = protocol.make_hello_response(PLAYER_NAME, VERSION)
+        elif message_type == protocol.CHOOSE_PAIR:
             response = ask_pair(message)
-        elif message_type == "choose_column":
+        elif message_type == protocol.CHOOSE_COLUMN:
             response = ask_column(message)
-        elif message_type == "decide_continue":
+        elif message_type == protocol.DECIDE_CONTINUE:
             response = ask_continue(message)
-        elif message_type in {"turn_start", "move", "turn_end", "burst", "final"}:
+        elif message_type in {protocol.TURN_START, protocol.MOVE, protocol.TURN_END, protocol.BURST, protocol.FINAL}:
             print(f"{message_type}: {message}", file=sys.stderr)
             response = None
-        elif message_type == "bye":
-            response = {"type": "bye", "player_name": PLAYER_NAME}
+        elif message_type == protocol.BYE:
+            response = protocol.make_bye_response(PLAYER_NAME)
         else:
-            response = {"type": "error", "error": f"unknown message type: {message_type}"}
+            response = protocol.make_error_response(f"unknown message type: {message_type}")
 
         if response is not None:
             print(json.dumps(response, ensure_ascii=False), flush=True)
-        if message_type == "bye":
+        if message_type == protocol.BYE:
             break
     return 0
 

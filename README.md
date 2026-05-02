@@ -146,6 +146,7 @@ POINT = 0
 ```text
 cant_stop/
     master.py                  4人用の親プログラム
+    protocol.py                親子通信JSONのtype名、生成関数、応答検証
     simulator.py               Can't Stop のゲームロジック
     gui.py                     background.png の上にレーンを描画する補助GUI
     live_view.py               進行中のイベントを受け取って盤面をリアルタイム表示
@@ -191,6 +192,8 @@ python cant_stop\live_view.py --player1 cant_stop\players\cautious_player.py --p
 自分の手番以外では操作情報を隠し、ボタンを無効化します。バースト時はGUIに表示され、`live_view.py` では既定で0.5秒停止します。停止時間は `--burst_pause` で調整できます。
 
 2ポーン配置済みで、選んだ出目ペアのどちらのレーンも新規配置可能な場合は、親が追加で `choose_column` を要求します。`theory_player.py` は7に近いレーンを選び、その他のbotはランダムに選びます。`human_tk_player.py` ではレーン選択ボタンが表示されます。
+
+親子通信のJSON形式は `cant_stop/protocol.py` に集約しています。`choose_pair`、`choose_column`、`decide_continue` の応答は、simulator側で必要項目と値の妥当性を検証します。botを追加するときは、`protocol.make_*_response(...)` を使うと type名やキー名のtypoを避けやすくなります。
 
 結果JSONの最終盤面をGUI表示する例:
 

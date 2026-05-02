@@ -10,10 +10,12 @@ from pathlib import Path
 from typing import Any
 
 try:
+    from . import protocol
     from .gui import BACKGROUND_PATH, CANVAS_HEIGHT, CANVAS_WIDTH, draw_scene
     from .master import PlayerProcessPort, append_game_log, read_player_header, update_player_header, write_result_file
     from .simulator import COLUMN_HEIGHTS, run_game
 except ImportError:
+    import protocol
     from gui import BACKGROUND_PATH, CANVAS_HEIGHT, CANVAS_WIDTH, draw_scene
     from master import PlayerProcessPort, append_game_log, read_player_header, update_player_header, write_result_file
     from simulator import COLUMN_HEIGHTS, run_game
@@ -127,7 +129,7 @@ class LiveViewer:
             )
             result_path = write_result_file(result, Path(__file__).resolve().parent.parent / "results")
             for port in ports:
-                port.request({"type": "bye"})
+                port.request(protocol.make_bye_request())
             if not casual_match:
                 now_text = now.strftime("%Y/%m/%d %H:%M")
                 for header, player_result in zip(headers, result.results):
