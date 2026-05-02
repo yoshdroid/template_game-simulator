@@ -11,8 +11,8 @@ from bot_base import run_player
 PLAYER_NAME = "cant_stop_random_player"
 VERSION = "1.0"
 FIRST_GAME_DATE = '2026/05/03 01:00'
-LAST_GAME_DATE = '2026/05/03 01:03'
-PLAY_TIMES = 7
+LAST_GAME_DATE = '2026/05/03 01:15'
+PLAY_TIMES = 9
 WIN = 0
 POINT = 7
 

@@ -11,12 +11,14 @@ except ImportError:
 
 
 BACKGROUND_PATH = Path(__file__).with_name("background.png")
-CANVAS_WIDTH = 1100
-CANVAS_HEIGHT = 760
-BOARD_LEFT = 90
-BOARD_RIGHT = 1010
-BOARD_TOP = 80
-BOARD_BOTTOM = 690
+CANVAS_WIDTH = 900
+CANVAS_HEIGHT = 600
+BOARD_AREA_SIZE = 600
+PANEL_LEFT = 600
+BOARD_LEFT = 46
+BOARD_RIGHT = 554
+BOARD_TOP = 44
+BOARD_BOTTOM = 540
 
 
 def _lane_x(index: int) -> float:
@@ -36,10 +38,10 @@ def draw_board(canvas: tk.Canvas, board: dict[str, Any], players: list[str] | No
         height = COLUMN_HEIGHTS[column]
         x = _lane_x(index)
         canvas.create_line(x, BOARD_TOP, x, BOARD_BOTTOM, fill="#f7f7f7", width=2)
-        canvas.create_text(x, BOARD_BOTTOM + 28, text=str(column), fill="#ffffff", font=("Segoe UI", 14, "bold"))
+        canvas.create_text(x, BOARD_BOTTOM + 24, text=str(column), fill="#ffffff", font=("Segoe UI", 12, "bold"))
         for position in range(1, height + 1):
             y = _cell_y(position, height)
-            canvas.create_oval(x - 10, y - 10, x + 10, y + 10, outline="#ffffff", width=2)
+            canvas.create_oval(x - 7, y - 7, x + 7, y + 7, outline="#ffffff", width=2)
 
     progress = board.get("progress") or []
     for player_index, player_progress in enumerate(progress):
@@ -48,9 +50,9 @@ def draw_board(canvas: tk.Canvas, board: dict[str, Any], players: list[str] | No
             column = int(raw_column)
             if column not in COLUMN_HEIGHTS:
                 continue
-            x = _lane_x(COLUMNS.index(column)) + (player_index - 1.5) * 9
+            x = _lane_x(COLUMNS.index(column)) + (player_index - 1.5) * 7
             y = _cell_y(int(position), COLUMN_HEIGHTS[column])
-            canvas.create_oval(x - 8, y - 8, x + 8, y + 8, fill=color, outline="#111111")
+            canvas.create_oval(x - 6, y - 6, x + 6, y + 6, fill=color, outline="#111111")
 
     claimed_by = board.get("claimed_by") or {}
     for raw_column, player_index in claimed_by.items():
@@ -60,7 +62,7 @@ def draw_board(canvas: tk.Canvas, board: dict[str, Any], players: list[str] | No
         x = _lane_x(COLUMNS.index(column))
         y = _cell_y(COLUMN_HEIGHTS[column], COLUMN_HEIGHTS[column])
         color = PLAYER_COLORS[int(player_index) % len(PLAYER_COLORS)]
-        canvas.create_rectangle(x - 18, y - 18, x + 18, y + 18, fill=color, outline="#ffffff", width=2)
+        canvas.create_rectangle(x - 14, y - 14, x + 14, y + 14, fill=color, outline="#ffffff", width=2)
 
     pawns = board.get("pawns") or {}
     for raw_column, position in pawns.items():
@@ -69,29 +71,58 @@ def draw_board(canvas: tk.Canvas, board: dict[str, Any], players: list[str] | No
             continue
         x = _lane_x(COLUMNS.index(column))
         y = _cell_y(int(position), COLUMN_HEIGHTS[column])
-        canvas.create_oval(x - 12, y - 12, x + 12, y + 12, fill="#ffffff", outline="#111111", width=2)
+        canvas.create_oval(x - 10, y - 10, x + 10, y + 10, fill="#ffffff", outline="#111111", width=2)
 
+
+def draw_side_panel(canvas: tk.Canvas, board: dict[str, Any], players: list[str] | None = None, status: str = "") -> None:
+    canvas.create_rectangle(PANEL_LEFT, 0, CANVAS_WIDTH, CANVAS_HEIGHT, fill="#f4f4f4", outline="")
+    canvas.create_line(PANEL_LEFT, 0, PANEL_LEFT, CANVAS_HEIGHT, fill="#222222", width=2)
+    canvas.create_text(
+        PANEL_LEFT + 18,
+        28,
+        text="Players",
+        fill="#000000",
+        anchor="w",
+        font=("Segoe UI", 15, "bold"),
+    )
     scores = board.get("scores") or []
     for index, score in enumerate(scores):
         color = PLAYER_COLORS[index % len(PLAYER_COLORS)]
         name = players[index] if players and index < len(players) else f"P{index + 1}"
+        y = 66 + index * 38
+        canvas.create_rectangle(PANEL_LEFT + 18, y - 9, PANEL_LEFT + 36, y + 9, fill=color, outline="#000000")
         canvas.create_text(
-            28,
-            42 + index * 28,
+            PANEL_LEFT + 46,
+            y,
             text=f"{name}: {score}",
-            fill=color,
+            fill="#000000",
             anchor="w",
             font=("Segoe UI", 12, "bold"),
         )
 
-    if status:
-        canvas.create_text(
-            CANVAS_WIDTH // 2,
-            28,
-            text=status,
-            fill="#ffffff",
-            font=("Segoe UI", 15, "bold"),
-        )
+    claimed_by = board.get("claimed_by") or {}
+    claimed_text = ", ".join(f"{column}:P{int(owner) + 1}" for column, owner in sorted(claimed_by.items(), key=lambda item: int(item[0])))
+    canvas.create_text(PANEL_LEFT + 18, 235, text="Claimed", fill="#000000", anchor="w", font=("Segoe UI", 13, "bold"))
+    canvas.create_text(
+        PANEL_LEFT + 18,
+        262,
+        text=claimed_text or "-",
+        fill="#000000",
+        anchor="nw",
+        width=250,
+        font=("Segoe UI", 11),
+    )
+
+    canvas.create_text(PANEL_LEFT + 18, 360, text="Current Event", fill="#000000", anchor="w", font=("Segoe UI", 13, "bold"))
+    canvas.create_text(
+        PANEL_LEFT + 18,
+        388,
+        text=status or "-",
+        fill="#000000",
+        anchor="nw",
+        width=250,
+        font=("Segoe UI", 12),
+    )
 
 
 def draw_scene(canvas: tk.Canvas, board: dict[str, Any], players: list[str] | None = None, status: str = "") -> None:
@@ -100,8 +131,9 @@ def draw_scene(canvas: tk.Canvas, board: dict[str, Any], players: list[str] | No
     if background is not None:
         canvas.create_image(0, 0, image=background, anchor="nw")
     else:
-        canvas.configure(bg="#20242a")
+        canvas.create_rectangle(0, 0, BOARD_AREA_SIZE, CANVAS_HEIGHT, fill="#20242a", outline="")
     draw_board(canvas, board, players=players, status=status)
+    draw_side_panel(canvas, board, players=players, status=status)
 
 
 def show_board(board: dict[str, Any]) -> None:

@@ -16,11 +16,11 @@ from typing import Any
 ########################################
 PLAYER_NAME = "human_tk_player"
 VERSION = "0.1"
-FIRST_GAME_DATE = ""
-LAST_GAME_DATE = ""
-PLAY_TIMES = 0
-WIN = 0
-POINT = 0
+FIRST_GAME_DATE = '2026/05/03 01:15'
+LAST_GAME_DATE = '2026/05/03 01:15'
+PLAY_TIMES = 1
+WIN = 1
+POINT = 3
 
 
 PLAYER_COLORS = ("red", "green", "blue", "yellow")

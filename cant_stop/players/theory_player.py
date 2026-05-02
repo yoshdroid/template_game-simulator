@@ -11,10 +11,10 @@ from bot_base import choose_highest_option, run_player
 PLAYER_NAME = "theory_player"
 VERSION = "1.0"
 FIRST_GAME_DATE = '2026/05/03 01:00'
-LAST_GAME_DATE = '2026/05/03 01:03'
-PLAY_TIMES = 7
-WIN = 1
-POINT = 7
+LAST_GAME_DATE = '2026/05/03 01:15'
+PLAY_TIMES = 9
+WIN = 2
+POINT = 10
 
 
 def strategy(message):
