@@ -95,6 +95,7 @@ POINT = 0
 
 更新ルール:
 
+- `FIRST_GAME_DATE`: blankだったら試合実行日時で上書き
 - `LAST_GAME_DATE`: 試合実行日時で上書き
 - `PLAY_TIMES`: `+1`
 - `WIN`: 最終勝者なら `+1`
@@ -137,21 +138,3 @@ POINT = 0
 ```
 
 現時点の `master.py` は通常のローカル Python プロセスとして子botを起動します。将来、不特定ユーザの bot を扱う段階では、`master.py` に Docker runner 経由で起動するオプションを追加してください。
-
-## GitHub に登録する流れ
-
-ローカルで初回コミット後、GitHub 側に空のリポジトリを作って remote を設定します。
-
-```powershell
-git remote add origin https://github.com/<ユーザー名>/<リポジトリ名>.git
-git branch -M main
-git push -u origin main
-```
-
-GitHub CLI を使う場合:
-
-```powershell
-gh repo create <ユーザー名>/<リポジトリ名> --private --source . --remote origin --push
-```
-
-公開リポジトリにする場合は `--private` を `--public` に変更します。
