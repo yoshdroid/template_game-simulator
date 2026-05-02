@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import random
 
-from bot_base import choose_highest_option, protocol, run_player
+try:
+    from .bot_base import choose_highest_option, protocol, run_player
+except ImportError:
+    from bot_base import choose_highest_option, protocol, run_player
 
 
 ########################################
@@ -11,10 +14,10 @@ from bot_base import choose_highest_option, protocol, run_player
 PLAYER_NAME = "aggressive_player"
 VERSION = "1.0"
 FIRST_GAME_DATE = '2026/05/03 01:00'
-LAST_GAME_DATE = '2026/05/03 07:54'
-PLAY_TIMES = 10
+LAST_GAME_DATE = '2026/05/03 08:11'
+PLAY_TIMES = 11
 WIN = 7
-POINT = 24
+POINT = 26
 
 
 def strategy(message):

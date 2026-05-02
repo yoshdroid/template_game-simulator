@@ -24,10 +24,10 @@ except ImportError:
 PLAYER_NAME = "human_tk_player"
 VERSION = "0.1"
 FIRST_GAME_DATE = '2026/05/03 01:15'
-LAST_GAME_DATE = '2026/05/03 01:15'
-PLAY_TIMES = 1
-WIN = 1
-POINT = 3
+LAST_GAME_DATE = '2026/05/03 08:11'
+PLAY_TIMES = 2
+WIN = 2
+POINT = 6
 
 
 PLAYER_COLORS = ("red", "green", "blue", "yellow")

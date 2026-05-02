@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import random
 
-from bot_base import choose_highest_option, protocol, run_player
+try:
+    from .bot_base import choose_highest_option, protocol, run_player
+except ImportError:
+    from bot_base import choose_highest_option, protocol, run_player
 
 
 ########################################

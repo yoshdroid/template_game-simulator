@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import random
 
-from bot_base import protocol, run_player
+try:
+    from .bot_base import protocol, run_player
+except ImportError:
+    from bot_base import protocol, run_player
 
 
 ########################################
@@ -11,10 +14,10 @@ from bot_base import protocol, run_player
 PLAYER_NAME = "cant_stop_random_player"
 VERSION = "1.0"
 FIRST_GAME_DATE = '2026/05/03 01:00'
-LAST_GAME_DATE = '2026/05/03 07:54'
-PLAY_TIMES = 11
+LAST_GAME_DATE = '2026/05/03 08:11'
+PLAY_TIMES = 12
 WIN = 0
-POINT = 9
+POINT = 11
 
 
 def strategy(message):
