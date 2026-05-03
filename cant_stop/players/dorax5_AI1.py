@@ -12,12 +12,12 @@ except ImportError:
 # Player Information & Records
 ########################################
 PLAYER_NAME = "登山家"
-VERSION = "1.1"
+VERSION = "1.2"
 FIRST_GAME_DATE = '2026/05/03 13:46'
-LAST_GAME_DATE = '2026/05/03 14:02'
-PLAY_TIMES = 11
+LAST_GAME_DATE = '2026/05/03 14:08'
+PLAY_TIMES = 13
 WIN = 2
-POINT = 18
+POINT = 20
 
 
 TOP_DANGER_DEPTH = {
@@ -85,14 +85,14 @@ def roll_probability(message) -> float:
     if has_summit_pawn(message):
         return 0.0
 
-    probability = 0.60  # ver 1.1
+    probability = 0.40  # ver 1.2
     if has_top_danger_pawn(message):
-        probability = 0.45  # ver 1.1
+        probability = 0.50  # ver 1.2
         pawns = _pawns(message)
         if 7 in pawns and pawns[7] <= 8:
-            probability += 0.15
+            probability += 0.20 # ver 1.2
         if any(lane in pawns and pawns[lane] <= 6 for lane in (6, 8)):
-            probability += 0.10  # ver 1.1
+            probability += 0.08  # ver 1.2
     return round(min(probability, 1.0), 2)
 
 
