@@ -295,6 +295,7 @@ def run_game(
                     [list(option) for option in legal_options],
                     pawns,
                     public_board_state(board, pawns),
+                    player_index=current_player,
                 )
             )
             chosen_sums = protocol.parse_choose_pair_response(response, legal_options)
@@ -308,6 +309,7 @@ def run_game(
                         list(column_options),
                         pawns,
                         public_board_state(board, pawns),
+                        player_index=current_player,
                     )
                 )
                 selected_column = protocol.parse_choose_column_response(column_response, column_options)

@@ -60,8 +60,12 @@ def make_choose_pair_request(
     options: list[list[int]],
     pawns: dict[int, int],
     board: dict[str, Any],
+    player_index: int | None = None,
 ) -> dict[str, Any]:
-    return {"type": CHOOSE_PAIR, "dice": dice, "options": options, "pawns": pawns, "board": board}
+    message = {"type": CHOOSE_PAIR, "dice": dice, "options": options, "pawns": pawns, "board": board}
+    if player_index is not None:
+        message["player_index"] = player_index
+    return message
 
 
 def make_choose_pair_response(sums: list[int] | tuple[int, int]) -> dict[str, Any]:
@@ -83,8 +87,12 @@ def make_choose_column_request(
     columns: list[int],
     pawns: dict[int, int],
     board: dict[str, Any],
+    player_index: int | None = None,
 ) -> dict[str, Any]:
-    return {"type": CHOOSE_COLUMN, "dice": dice, "sums": sums, "columns": columns, "pawns": pawns, "board": board}
+    message = {"type": CHOOSE_COLUMN, "dice": dice, "sums": sums, "columns": columns, "pawns": pawns, "board": board}
+    if player_index is not None:
+        message["player_index"] = player_index
+    return message
 
 
 def make_choose_column_response(column: int) -> dict[str, Any]:
