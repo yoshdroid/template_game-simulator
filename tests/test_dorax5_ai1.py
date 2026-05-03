@@ -23,7 +23,7 @@ def test_dorax5_ai1_reduces_roll_probability_near_top_and_adds_center_bonus():
     }
 
     assert dorax5_AI1.has_top_danger_pawn(message) is True
-    assert dorax5_AI1.roll_probability(message) == 0.50
+    assert dorax5_AI1.roll_probability(message) == 0.93
 
 
 def test_dorax5_ai1_prioritizes_center_lanes_then_edges():

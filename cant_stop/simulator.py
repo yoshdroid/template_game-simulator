@@ -352,7 +352,7 @@ def run_game(
             )
 
             stop_response = player.request(
-                protocol.make_decide_continue_request(pawns, public_board_state(board, pawns))
+                protocol.make_decide_continue_request(pawns, public_board_state(board, pawns), player_index=current_player)
             )
             if protocol.parse_decide_continue_response(stop_response) == protocol.STOP:
                 claimed = commit_pawns(board, current_player, pawns)

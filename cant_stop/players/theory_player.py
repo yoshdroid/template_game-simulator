@@ -14,10 +14,10 @@ except ImportError:
 PLAYER_NAME = "theory_player"
 VERSION = "1.0"
 FIRST_GAME_DATE = '2026/05/03 01:00'
-LAST_GAME_DATE = '2026/05/03 14:08'
-PLAY_TIMES = 24
-WIN = 8
-POINT = 38
+LAST_GAME_DATE = '2026/05/03 14:46'
+PLAY_TIMES = 30
+WIN = 13
+POINT = 54
 
 
 def has_summit_pawn(message):

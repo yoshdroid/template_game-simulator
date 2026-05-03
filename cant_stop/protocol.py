@@ -103,8 +103,15 @@ def parse_choose_column_response(message: dict[str, Any], options: tuple[int, ..
     return column
 
 
-def make_decide_continue_request(pawns: dict[int, int], board: dict[str, Any]) -> dict[str, Any]:
-    return {"type": DECIDE_CONTINUE, "pawns": pawns, "board": board}
+def make_decide_continue_request(
+    pawns: dict[int, int],
+    board: dict[str, Any],
+    player_index: int | None = None,
+) -> dict[str, Any]:
+    message = {"type": DECIDE_CONTINUE, "pawns": pawns, "board": board}
+    if player_index is not None:
+        message["player_index"] = player_index
+    return message
 
 
 def make_decide_continue_response(action: str) -> dict[str, Any]:

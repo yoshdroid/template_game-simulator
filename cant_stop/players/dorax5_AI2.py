@@ -11,24 +11,24 @@ except ImportError:
 ########################################
 # Player Information & Records
 ########################################
-PLAYER_NAME = "登山家"
-VERSION = "1.2"
-FIRST_GAME_DATE = '2026/05/03 13:46'
+PLAYER_NAME = "ギャンブラー"
+VERSION = "1.0"
+FIRST_GAME_DATE = '2026/05/03 14:40'
 LAST_GAME_DATE = '2026/05/03 14:46'
-PLAY_TIMES = 25
-WIN = 3
-POINT = 28
+PLAY_TIMES = 6
+WIN = 4
+POINT = 14
 
 
-TOP_DANGER_DEPTH = {
-    2: 2,
+STOP_STEPS = {
+    2: 1,
+    12: 1,
     3: 2,
+    4: 2,
+    10: 2,
     11: 2,
-    12: 2,
-    4: 3,
     5: 3,
     9: 3,
-    10: 3,
     6: 4,
     7: 4,
     8: 4,
@@ -43,10 +43,22 @@ def _pawns(message):
     return {int(column): int(position) for column, position in (message.get("pawns") or {}).items()}
 
 
+def _scores(message):
+    return [int(score) for score in ((message.get("board") or {}).get("scores") or [])]
+
+
+def _player_progress(message):
+    player_index = int(message.get("player_index", 0))
+    progress = (message.get("board") or {}).get("progress") or []
+    if player_index >= len(progress):
+        return {}
+    return {int(column): int(position) for column, position in progress[player_index].items()}
+
+
 def _lane_priority(column: int) -> tuple[int, int, int]:
-    if column in {6, 7, 8}:
+    if column in {2, 12}:
         tier = 3
-    elif column in {2, 12}:
+    elif column in {6, 7, 8}:
         tier = 2
     else:
         tier = 1
@@ -55,45 +67,10 @@ def _lane_priority(column: int) -> tuple[int, int, int]:
 
 def _option_priority(option) -> tuple[int, int, int, int]:
     lanes = [int(column) for column in option]
-    priority_count = sum(1 for column in lanes if column in {6, 7, 8})
     edge_count = sum(1 for column in lanes if column in {2, 12})
+    center_count = sum(1 for column in lanes if column in {6, 7, 8})
     center_score = -sum(abs(column - 7) for column in lanes)
-    return priority_count, edge_count, center_score, sum(lanes)
-
-
-def has_summit_pawn(message) -> bool:
-    columns = _columns(message)
-    for column, position in _pawns(message).items():
-        if position >= columns.get(column, 999):
-            return True
-    return False
-
-
-def has_top_danger_pawn(message) -> bool:
-    columns = _columns(message)
-    for column, position in _pawns(message).items():
-        depth = TOP_DANGER_DEPTH.get(column)
-        if depth is None:
-            continue
-        height = columns.get(column)
-        if height is not None and position >= height - depth + 1:
-            return True
-    return False
-
-
-def roll_probability(message) -> float:
-    if has_summit_pawn(message):
-        return 0.0
-
-    probability = 0.60  # ver 1.2
-    if has_top_danger_pawn(message):
-        probability = 0.65  # ver 1.2
-        pawns = _pawns(message)
-        if 7 in pawns and pawns[7] <= 8:
-            probability += 0.20 # ver 1.2
-        if any(lane in pawns and pawns[lane] <= 6 for lane in (6, 8)):
-            probability += 0.08  # ver 1.2
-    return round(min(probability, 1.0), 2)
+    return edge_count, center_count, center_score, sum(lanes)
 
 
 def choose_pair(message):
@@ -108,6 +85,41 @@ def choose_column(message):
     if not columns:
         return 7
     return max(columns, key=_lane_priority)
+
+
+def has_summit_pawn(message) -> bool:
+    columns = _columns(message)
+    for column, position in _pawns(message).items():
+        if position >= columns.get(column, 999):
+            return True
+    return False
+
+
+def is_late_game(message) -> bool:
+    scores = _scores(message)
+    return any(score >= 2 for score in scores) or sum(scores) >= 4
+
+
+def advanced_steps(message, column: int, position: int) -> int:
+    return position - _player_progress(message).get(column, 0)
+
+
+def reached_stop_steps(message) -> bool:
+    for column, position in _pawns(message).items():
+        threshold = STOP_STEPS.get(column)
+        if threshold is not None and advanced_steps(message, column, position) >= threshold:
+            return True
+    return False
+
+
+def roll_probability(message) -> float:
+    if has_summit_pawn(message):
+        return 0.0
+    if is_late_game(message):
+        return 0.80
+    if reached_stop_steps(message):
+        return 0.0
+    return 1.0
 
 
 def strategy(message):
