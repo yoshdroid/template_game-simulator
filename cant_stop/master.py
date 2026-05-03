@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import ast
 import json
+import os
 import queue
 import re
 import subprocess
@@ -39,6 +40,8 @@ class PlayerProcessPort:
         self.path = path
         self.name = read_player_header(path).player_name
         self.timeout_seconds = timeout_seconds
+        env = os.environ.copy()
+        env["PYTHONIOENCODING"] = "utf-8"
         self.process = subprocess.Popen(
             [sys.executable, str(path), "--seed", str(seed)],
             stdin=subprocess.PIPE,
@@ -47,6 +50,7 @@ class PlayerProcessPort:
             text=True,
             encoding="utf-8",
             bufsize=1,
+            env=env,
         )
         self._responses: queue.Queue[dict[str, Any]] = queue.Queue()
         self._reader = threading.Thread(target=self._read_stdout, daemon=True)

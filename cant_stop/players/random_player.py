@@ -14,10 +14,10 @@ except ImportError:
 PLAYER_NAME = "cant_stop_random_player"
 VERSION = "1.0"
 FIRST_GAME_DATE = '2026/05/03 01:00'
-LAST_GAME_DATE = '2026/05/03 08:11'
-PLAY_TIMES = 12
+LAST_GAME_DATE = '2026/05/03 13:47'
+PLAY_TIMES = 14
 WIN = 0
-POINT = 11
+POINT = 12
 
 
 def strategy(message):
