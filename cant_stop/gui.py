@@ -82,14 +82,14 @@ def draw_side_panel(
     active_player_index: int | None = None,
 ) -> None:
     canvas.create_rectangle(PANEL_LEFT, 0, CANVAS_WIDTH, CANVAS_HEIGHT, fill="#f4f4f4", outline="")
-    canvas.create_line(PANEL_LEFT, 0, PANEL_LEFT, CANVAS_HEIGHT, fill="#222222", width=2)
+    canvas.create_line(PANEL_LEFT, 0, PANEL_LEFT, CANVAS_HEIGHT, fill="#e3e3e3", width=2)
     canvas.create_text(
         PANEL_LEFT + 18,
         28,
         text="Players",
         fill="#000000",
         anchor="w",
-        font=("Segoe UI", 15, "bold"),
+        font=("Meiryo UI", 15, "bold"),
     )
     scores = board.get("scores") or []
     for index, score in enumerate(scores):
@@ -103,7 +103,7 @@ def draw_side_panel(
             text=f"{name}: {score}",
             fill="#000000",
             anchor="w",
-            font=("Segoe UI", 12, "bold"),
+            font=("Meiryo UI", 12, "bold"),
         )
         if active_player_index == index:
             bbox = canvas.bbox(text_id)
