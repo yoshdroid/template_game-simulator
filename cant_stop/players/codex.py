@@ -15,11 +15,11 @@ except ImportError:
 ########################################
 PLAYER_NAME = "CODEX"
 VERSION = "0.1"
-FIRST_GAME_DATE = ""
-LAST_GAME_DATE = ""
-PLAY_TIMES = 0
-WIN = 0
-POINT = 0
+FIRST_GAME_DATE = '2026/05/03 21:53'
+LAST_GAME_DATE = '2026/05/03 22:03'
+PLAY_TIMES = 8
+WIN = 2
+POINT = 14
 
 
 COLUMNS = tuple(range(2, 13))

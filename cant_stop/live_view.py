@@ -91,6 +91,7 @@ class LiveViewer:
         self.done = False
         self.close_enabled = False
         self.players: list[str] = []
+        self.active_player_index: int | None = None
         self.last_board = empty_board()
         self.last_status = "Waiting for game..."
 
@@ -102,7 +103,7 @@ class LiveViewer:
         if BACKGROUND_PATH.exists():
             background = tk.PhotoImage(file=str(BACKGROUND_PATH))
             self.canvas.background = background
-        draw_scene(self.canvas, self.last_board, status=self.last_status)
+        draw_scene(self.canvas, self.last_board, status=self.last_status, active_player_index=self.active_player_index)
 
     def start(self) -> None:
         worker = threading.Thread(target=self._run_match, daemon=True)
@@ -161,12 +162,22 @@ class LiveViewer:
 
         if event.get("type") == "game_start":
             self.players = list(event.get("players") or [])
+        if "player_index" in event:
+            self.active_player_index = int(event["player_index"])
+        elif event.get("type") in {"game_start", "game_end", "saved", "error"}:
+            self.active_player_index = None
         if event.get("type") == "saved":
             self.last_status = f"Saved: {event.get('path')}"
         else:
             self.last_status = event_status(event)
         self.last_board = event.get("board") or self.last_board
-        draw_scene(self.canvas, self.last_board, players=self.players, status=self.last_status)
+        draw_scene(
+            self.canvas,
+            self.last_board,
+            players=self.players,
+            status=self.last_status,
+            active_player_index=self.active_player_index,
+        )
         self.root.after(self.args.delay, self._poll_events)
 
     def _close_if_finished(self, _event: tk.Event) -> None:

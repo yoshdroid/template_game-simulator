@@ -74,7 +74,13 @@ def draw_board(canvas: tk.Canvas, board: dict[str, Any], players: list[str] | No
         canvas.create_oval(x - 10, y - 10, x + 10, y + 10, fill="#ffffff", outline="#111111", width=2)
 
 
-def draw_side_panel(canvas: tk.Canvas, board: dict[str, Any], players: list[str] | None = None, status: str = "") -> None:
+def draw_side_panel(
+    canvas: tk.Canvas,
+    board: dict[str, Any],
+    players: list[str] | None = None,
+    status: str = "",
+    active_player_index: int | None = None,
+) -> None:
     canvas.create_rectangle(PANEL_LEFT, 0, CANVAS_WIDTH, CANVAS_HEIGHT, fill="#f4f4f4", outline="")
     canvas.create_line(PANEL_LEFT, 0, PANEL_LEFT, CANVAS_HEIGHT, fill="#222222", width=2)
     canvas.create_text(
@@ -91,7 +97,7 @@ def draw_side_panel(canvas: tk.Canvas, board: dict[str, Any], players: list[str]
         name = players[index] if players and index < len(players) else f"P{index + 1}"
         y = 66 + index * 38
         canvas.create_rectangle(PANEL_LEFT + 18, y - 9, PANEL_LEFT + 36, y + 9, fill=color, outline="#000000")
-        canvas.create_text(
+        text_id = canvas.create_text(
             PANEL_LEFT + 46,
             y,
             text=f"{name}: {score}",
@@ -99,6 +105,10 @@ def draw_side_panel(canvas: tk.Canvas, board: dict[str, Any], players: list[str]
             anchor="w",
             font=("Segoe UI", 12, "bold"),
         )
+        if active_player_index == index:
+            bbox = canvas.bbox(text_id)
+            if bbox is not None:
+                canvas.create_line(bbox[0], bbox[3] + 3, bbox[2], bbox[3] + 3, fill=color, width=3)
 
     claimed_by = board.get("claimed_by") or {}
     claimed_text = ", ".join(f"{column}:P{int(owner) + 1}" for column, owner in sorted(claimed_by.items(), key=lambda item: int(item[0])))
@@ -125,7 +135,13 @@ def draw_side_panel(canvas: tk.Canvas, board: dict[str, Any], players: list[str]
     )
 
 
-def draw_scene(canvas: tk.Canvas, board: dict[str, Any], players: list[str] | None = None, status: str = "") -> None:
+def draw_scene(
+    canvas: tk.Canvas,
+    board: dict[str, Any],
+    players: list[str] | None = None,
+    status: str = "",
+    active_player_index: int | None = None,
+) -> None:
     canvas.delete("all")
     background = getattr(canvas, "background", None)
     if background is not None:
@@ -133,7 +149,7 @@ def draw_scene(canvas: tk.Canvas, board: dict[str, Any], players: list[str] | No
     else:
         canvas.create_rectangle(0, 0, BOARD_AREA_SIZE, CANVAS_HEIGHT, fill="#20242a", outline="")
     draw_board(canvas, board, players=players, status=status)
-    draw_side_panel(canvas, board, players=players, status=status)
+    draw_side_panel(canvas, board, players=players, status=status, active_player_index=active_player_index)
 
 
 def show_board(board: dict[str, Any]) -> None:
