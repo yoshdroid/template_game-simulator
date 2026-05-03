@@ -12,7 +12,7 @@ import threading
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, TextIO
 
 try:
     from . import protocol
@@ -36,10 +36,19 @@ class PlayerHeader:
 
 
 class PlayerProcessPort:
-    def __init__(self, path: Path, seed: int, timeout_seconds: float = 5.0) -> None:
+    def __init__(
+        self,
+        path: Path,
+        seed: int,
+        timeout_seconds: float = 5.0,
+        trace_json: bool = False,
+        trace_output: TextIO | None = None,
+    ) -> None:
         self.path = path
         self.name = read_player_header(path).player_name
         self.timeout_seconds = timeout_seconds
+        self.trace_json = trace_json
+        self.trace_output = trace_output or sys.stderr
         env = os.environ.copy()
         env["PYTHONIOENCODING"] = "utf-8"
         self.process = subprocess.Popen(
@@ -63,7 +72,9 @@ class PlayerProcessPort:
             if not line:
                 continue
             try:
-                self._responses.put(json.loads(line))
+                response = json.loads(line)
+                self._trace("RECV", response)
+                self._responses.put(response)
             except json.JSONDecodeError:
                 self._responses.put(protocol.make_error_response(f"invalid json from {self.path.name}: {line}"))
 
@@ -81,8 +92,15 @@ class PlayerProcessPort:
         if self.process.poll() is not None:
             raise RuntimeError(f"{self.path} already exited")
         assert self.process.stdin is not None
+        self._trace("SEND", message)
         self.process.stdin.write(json.dumps(message, ensure_ascii=False) + "\n")
         self.process.stdin.flush()
+
+    def _trace(self, direction: str, message: dict[str, Any]) -> None:
+        if not self.trace_json:
+            return
+        text = json.dumps(message, ensure_ascii=False, separators=(",", ":"))
+        print(f"[json {direction} {self.name}] {text}", file=self.trace_output)
 
     def close(self) -> None:
         if self.process.poll() is None:
@@ -101,6 +119,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--step", type=int, default=None, help="Stop simulator after this many recorded decisions.")
     parser.add_argument("--timeout", type=float, default=5.0, help="Seconds to wait for each player response.")
     parser.add_argument("--burst_pause", type=float, default=0.0, help="Seconds to pause after a burst event.")
+    parser.add_argument("--trace_json", action="store_true", help="Mirror parent/player JSON Lines traffic to stderr.")
     args, unknown = parser.parse_known_args(argv)
     players: dict[int, str] = {}
     index = 0
@@ -226,7 +245,10 @@ def main(argv: list[str] | None = None) -> int:
 
     headers = [read_player_header(path) for path in player_paths]
     casual_match = args.casual_match or len(set(player_paths)) != len(player_paths)
-    ports = [PlayerProcessPort(path, seed + index, timeout_seconds=args.timeout) for index, path in enumerate(player_paths)]
+    ports = [
+        PlayerProcessPort(path, seed + index, timeout_seconds=args.timeout, trace_json=args.trace_json)
+        for index, path in enumerate(player_paths)
+    ]
     try:
         result = run_game(tuple(ports), seed=seed, step=args.step, burst_pause_seconds=args.burst_pause)
         result_path = write_result_file(result, ROOT_DIR / "results")

@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from io import StringIO
 from pathlib import Path
 
-from cant_stop.master import update_player_header
+from cant_stop.master import PlayerProcessPort, parse_args, update_player_header
 from cant_stop.simulator import (
     BoardState,
     advance_column,
@@ -138,3 +139,32 @@ def test_update_player_header_sets_first_game_date_only_when_empty():
         assert "POINT = 3" in text
     finally:
         player.unlink(missing_ok=True)
+
+
+def test_parse_args_accepts_trace_json_flag():
+    args = parse_args(
+        [
+            "--player1",
+            "a.py",
+            "--player2",
+            "b.py",
+            "--player3",
+            "c.py",
+            "--player4",
+            "d.py",
+            "--trace_json",
+        ]
+    )
+
+    assert args.trace_json is True
+
+
+def test_player_process_port_trace_writes_json_to_sink():
+    port = PlayerProcessPort.__new__(PlayerProcessPort)
+    port.name = "sample"
+    port.trace_json = True
+    port.trace_output = StringIO()
+
+    port._trace("SEND", {"type": "hello", "player_index": 1})
+
+    assert port.trace_output.getvalue() == '[json SEND sample] {"type":"hello","player_index":1}\n'
