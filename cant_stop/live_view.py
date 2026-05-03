@@ -89,12 +89,14 @@ class LiveViewer:
         self.args = args
         self.events: queue.Queue[dict[str, Any]] = queue.Queue()
         self.done = False
+        self.close_enabled = False
         self.players: list[str] = []
         self.last_board = empty_board()
         self.last_status = "Waiting for game..."
 
         self.root = tk.Tk()
         self.root.title("Can't Stop Live")
+        self.root.bind("<Escape>", self._close_if_finished)
         self.canvas = tk.Canvas(self.root, width=CANVAS_WIDTH, height=CANVAS_HEIGHT, highlightthickness=0)
         self.canvas.pack(fill="both", expand=True)
         if BACKGROUND_PATH.exists():
@@ -153,6 +155,7 @@ class LiveViewer:
 
         if event.get("type") == "viewer_done":
             self.done = True
+            self.close_enabled = True
             self.root.after(self.args.delay, self._poll_events)
             return
 
@@ -165,6 +168,10 @@ class LiveViewer:
         self.last_board = event.get("board") or self.last_board
         draw_scene(self.canvas, self.last_board, players=self.players, status=self.last_status)
         self.root.after(self.args.delay, self._poll_events)
+
+    def _close_if_finished(self, _event: tk.Event) -> None:
+        if self.close_enabled:
+            self.root.destroy()
 
 
 def main() -> int:
