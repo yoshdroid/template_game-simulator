@@ -24,10 +24,10 @@ except ImportError:
 PLAYER_NAME = "dorax5"
 VERSION = "1.0"
 FIRST_GAME_DATE = '2026/05/03 13:14'
-LAST_GAME_DATE = '2026/05/03 15:04'
-PLAY_TIMES = 2
-WIN = 0
-POINT = 4
+LAST_GAME_DATE = '2026/05/03 16:46'
+PLAY_TIMES = 3
+WIN = 1
+POINT = 7
 
 
 PLAYER_COLORS = ("red", "green", "blue", "yellow")

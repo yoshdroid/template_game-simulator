@@ -14,10 +14,10 @@ except ImportError:
 PLAYER_NAME = "aggressive_player"
 VERSION = "1.0"
 FIRST_GAME_DATE = '2026/05/03 01:00'
-LAST_GAME_DATE = '2026/05/03 15:01'
-PLAY_TIMES = 40
+LAST_GAME_DATE = '2026/05/03 16:46'
+PLAY_TIMES = 45
 WIN = 14
-POINT = 64
+POINT = 68
 
 
 def strategy(message):
