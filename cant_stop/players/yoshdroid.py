@@ -24,10 +24,10 @@ except ImportError:
 PLAYER_NAME = "yoshdroid"
 VERSION = "1.0"
 FIRST_GAME_DATE = '2026/05/03 13:14'
-LAST_GAME_DATE = '2026/05/03 16:59'
-PLAY_TIMES = 4
-WIN = 3
-POINT = 9
+LAST_GAME_DATE = '2026/05/03 21:22'
+PLAY_TIMES = 7
+WIN = 5
+POINT = 15
 
 
 PLAYER_COLORS = ("red", "green", "blue", "yellow")

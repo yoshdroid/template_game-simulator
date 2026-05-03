@@ -11,13 +11,13 @@ except ImportError:
 ########################################
 # Player Information & Records
 ########################################
-PLAYER_NAME = "cant_stop_random_player"
+PLAYER_NAME = "超方向音痴"
 VERSION = "1.0"
 FIRST_GAME_DATE = '2026/05/03 01:00'
-LAST_GAME_DATE = '2026/05/03 17:37'
-PLAY_TIMES = 35
+LAST_GAME_DATE = '2026/05/03 21:44'
+PLAY_TIMES = 45
 WIN = 2
-POINT = 27
+POINT = 33
 
 
 def strategy(message):

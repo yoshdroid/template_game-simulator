@@ -11,20 +11,20 @@ except ImportError:
 ########################################
 # Player Information & Records
 ########################################
-PLAYER_NAME = "aggressive_player"
-VERSION = "1.0"
+PLAYER_NAME = "暴走バカヤドン"
+VERSION = "99.9"
 FIRST_GAME_DATE = '2026/05/03 01:00'
-LAST_GAME_DATE = '2026/05/03 17:37'
-PLAY_TIMES = 48
-WIN = 16
-POINT = 76
+LAST_GAME_DATE = '2026/05/03 21:44'
+PLAY_TIMES = 53
+WIN = 20
+POINT = 89
 
 
 def strategy(message):
     if protocol.message_type(message) == protocol.CHOOSE_PAIR:
         return protocol.make_choose_pair_response(choose_highest_option(message))
     if protocol.message_type(message) == protocol.DECIDE_CONTINUE:
-        action = protocol.STOP if random.random() < 0.25 else protocol.ROLL
+        action = protocol.STOP if random.random() < 0.15 else protocol.ROLL
         return protocol.make_decide_continue_response(action)
     return None
 

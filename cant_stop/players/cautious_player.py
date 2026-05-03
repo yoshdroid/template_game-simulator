@@ -11,13 +11,13 @@ except ImportError:
 ########################################
 # Player Information & Records
 ########################################
-PLAYER_NAME = "cautious_player"
+PLAYER_NAME = "腰抜けチキン"
 VERSION = "1.0"
 FIRST_GAME_DATE = '2026/05/03 01:00'
-LAST_GAME_DATE = '2026/05/03 17:37'
-PLAY_TIMES = 34
+LAST_GAME_DATE = '2026/05/03 21:44'
+PLAY_TIMES = 39
 WIN = 2
-POINT = 24
+POINT = 29
 
 
 def strategy(message):
