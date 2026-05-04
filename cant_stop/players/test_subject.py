@@ -17,19 +17,34 @@ except ImportError:
 ########################################
 # Player Information & Records
 ########################################
-PLAYER_NAME = "Brain"
+PLAYER_NAME = "実験体ｘ"
 VERSION = "1.0"
-FIRST_GAME_DATE = '2026/05/03 16:32'
+FIRST_GAME_DATE = '2026/05/04 22:27'
 LAST_GAME_DATE = '2026/05/04 22:28'
-PLAY_TIMES = 313
-WIN = 116
-POINT = 558
+PLAY_TIMES = 2
+WIN = 1
+POINT = 4
 
 
 CENTER_LANES = {6, 7, 8}
 EDGE_LANES = {2, 12}
 MIDDLE_LANES = {3, 4, 5, 9, 10, 11}
 SIDE_MIDDLE_LANES = {4, 5, 9, 10}
+COLUMN_HEIGHTS = {
+    2: 3,
+    3: 5,
+    4: 7,
+    5: 9,
+    6: 11,
+    7: 13,
+    8: 11,
+    9: 9,
+    10: 7,
+    11: 5,
+    12: 3,
+}
+MARK_VALUES = {2: 12, 3: 10, 4: 8, 5: 6, 6: 4, 7: 2, 8: 4, 9: 6, 10: 8, 11: 10, 12: 12}
+ADVANCE_VALUES = {2: 6, 3: 5, 4: 4, 5: 3, 6: 2, 7: 1, 8: 2, 9: 3, 10: 4, 11: 5, 12: 6}
 
 
 def _columns(message: dict[str, Any]) -> dict[int, int]:
@@ -70,17 +85,41 @@ def _other_progress(message: dict[str, Any]) -> list[dict[int, int]]:
     return [player for index, player in enumerate(_progress(message)) if index != player_index]
 
 
+def can_advance(message: dict[str, Any], pawns: dict[int, int], column: int) -> bool:
+    columns = _columns(message) or COLUMN_HEIGHTS
+    if column not in columns or column in _claimed_by(message):
+        return False
+    if column in pawns:
+        return pawns[column] < columns[column]
+    if len(pawns) >= 3:
+        return False
+    return _my_progress(message).get(column, 0) + 1 <= columns[column]
+
+
+def apply_option(message: dict[str, Any], pawns: dict[int, int], option: list[int] | tuple[int, ...]) -> dict[int, int]:
+    result = dict(pawns)
+    for raw_column in option:
+        column = int(raw_column)
+        if not can_advance(message, result, column):
+            continue
+        if column in result:
+            result[column] += 1
+        else:
+            result[column] = _my_progress(message).get(column, 0) + 1
+    return result
+
+
 def _is_second_from_top(message: dict[str, Any], column: int) -> bool:
-    height = _columns(message).get(column)
+    height = (_columns(message) or COLUMN_HEIGHTS).get(column)
     return height is not None and _my_progress(message).get(column) == height - 1
 
 
 def _is_within_top_three(message: dict[str, Any], column: int) -> bool:
-    height = _columns(message).get(column)
+    height = (_columns(message) or COLUMN_HEIGHTS).get(column)
     return height is not None and _my_progress(message).get(column, 0) >= height - 2
 
 
-def _critical_priority(message: dict[str, Any], lanes: list[int]) -> int:
+def critical_priority(message: dict[str, Any], lanes: list[int]) -> int:
     second_count = sum(1 for column in lanes if _is_second_from_top(message, column))
     if second_count == len(lanes):
         return 3
@@ -96,7 +135,7 @@ def _has_other_at_least(message: dict[str, Any], column: int, position: int) -> 
 
 
 def _has_other_near_top(message: dict[str, Any], column: int, depth: int) -> bool:
-    height = _columns(message).get(column)
+    height = (_columns(message) or COLUMN_HEIGHTS).get(column)
     if height is None:
         return False
     return any(player.get(column, 0) >= height - depth + 1 for player in _other_progress(message))
@@ -107,7 +146,7 @@ def _has_other_above_me(message: dict[str, Any], column: int) -> bool:
     return any(player.get(column, 0) > my_position for player in _other_progress(message))
 
 
-def _new_lane_priority(message: dict[str, Any], column: int) -> tuple[int, int, int]:
+def new_lane_priority(message: dict[str, Any], column: int) -> tuple[int, int, int]:
     my_progress = _my_progress(message)
     if column in CENTER_LANES and not _has_other_at_least(message, column, 4):
         tier = 5
@@ -124,13 +163,47 @@ def _new_lane_priority(message: dict[str, Any], column: int) -> tuple[int, int, 
     return tier, -abs(column - 7), column
 
 
-def _option_priority(message: dict[str, Any], option: list[int]) -> tuple[int, int, tuple[tuple[int, int, int], ...], int]:
+def column_turn_score(message: dict[str, Any], column: int, position: int) -> int:
+    start = _my_progress(message).get(column, 0)
+    if position <= start:
+        return 0
+    if start == 0:
+        return MARK_VALUES[column] + ADVANCE_VALUES[column] * (position - 1)
+    return ADVANCE_VALUES[column] * (position - start)
+
+
+def turn_score(message: dict[str, Any], pawns: dict[int, int] | None = None) -> int:
+    current_pawns = _pawns(message) if pawns is None else pawns
+    score = sum(column_turn_score(message, column, position) for column, position in current_pawns.items())
+    columns = set(current_pawns)
+    if len(columns) == 3:
+        if all(column % 2 == 1 for column in columns):
+            score += 2
+        if all(column % 2 == 0 for column in columns):
+            score -= 2
+        if all(column < 8 for column in columns) or all(column > 6 for column in columns):
+            score += 4
+    return score
+
+
+def is_late_game(message: dict[str, Any]) -> bool:
+    scores = _scores(message)
+    return any(score >= 2 for score in scores) or sum(scores) >= 4
+
+
+def has_summit_pawn(message: dict[str, Any]) -> bool:
+    columns = _columns(message) or COLUMN_HEIGHTS
+    return any(position >= columns.get(column, 999) for column, position in _pawns(message).items())
+
+
+def _option_priority(message: dict[str, Any], option: list[int]) -> tuple[int, int, int, tuple[tuple[int, int, int], ...], int]:
     lanes = [int(column) for column in option]
-    critical = _critical_priority(message, lanes)
     pawns = _pawns(message)
-    existing_pawn_count = sum(1 for column in lanes if column in pawns)
-    new_priorities = tuple(sorted((_new_lane_priority(message, column) for column in lanes if column not in pawns), reverse=True))
-    return critical, existing_pawn_count, new_priorities, sum(lanes)
+    projected = apply_option(message, pawns, lanes)
+    existing_count = sum(1 for column in lanes if column in pawns)
+    new_priorities = tuple(sorted((new_lane_priority(message, column) for column in lanes if column not in pawns), reverse=True))
+    late_edge_count = sum(1 for column in lanes if column in EDGE_LANES)
+    return critical_priority(message, lanes), existing_count, turn_score(message, projected) + (late_edge_count * 2 if is_late_game(message) else 0), new_priorities, sum(lanes)
 
 
 def choose_pair(message: dict[str, Any]) -> list[int]:
@@ -144,35 +217,32 @@ def choose_column(message: dict[str, Any]) -> int:
     columns = [int(column) for column in (message.get("columns") or [])]
     if not columns:
         return 7
-    return max(columns, key=lambda column: _new_lane_priority(message, column))
-
-
-def has_summit_pawn(message: dict[str, Any]) -> bool:
-    columns = _columns(message)
-    for column, position in _pawns(message).items():
-        if position >= columns.get(column, 999):
-            return True
-    return False
-
-
-def _base_roll_probability(message: dict[str, Any]) -> float:
     pawns = _pawns(message)
-    scores = _scores(message)
-    score_total = sum(scores)
+    return max(
+        columns,
+        key=lambda column: (
+            turn_score(message, apply_option(message, pawns, (column,))),
+            new_lane_priority(message, column),
+        ),
+    )
+
+
+def base_roll_probability(message: dict[str, Any]) -> float:
+    pawns = _pawns(message)
     center_count = sum(1 for column in pawns if column in CENTER_LANES)
     side_middle_count = sum(1 for column in pawns if column in SIDE_MIDDLE_LANES)
     center_claimed = any(column in CENTER_LANES for column in _claimed_by(message))
 
-    if score_total > 3:
-        if center_count == 1:
-            return 0.85
+    if is_late_game(message):
         if center_count >= 2:
-            return 1.00
-        if side_middle_count == 1:
-            return 0.65
+            return 1.0
+        if center_count == 1:
+            return 0.90
         if side_middle_count >= 2:
             return 0.90
-        return 0.25
+        if side_middle_count == 1:
+            return 0.80
+        return 0.80
 
     if center_claimed:
         if center_count == 1:
@@ -185,13 +255,6 @@ def _base_roll_probability(message: dict[str, Any]) -> float:
             return 0.85
         return 0.20
 
-    if score_total == 0:
-        if center_count == 1:
-            return 0.80
-        if center_count >= 2:
-            return 0.95
-        return 0.35
-
     if center_count == 1:
         return 0.80
     if center_count >= 2:
@@ -200,14 +263,19 @@ def _base_roll_probability(message: dict[str, Any]) -> float:
 
 
 def roll_probability(message: dict[str, Any], roll_count: int = 0) -> float:
-    if len(_pawns(message)) < 3:
+    pawns = _pawns(message)
+    if len(pawns) < 3:
         return 1.0
     if has_summit_pawn(message):
         return 0.0
-    return round(max(_base_roll_probability(message) - roll_count * 0.05, 0.0), 2)
+    if is_late_game(message):
+        return round(max(base_roll_probability(message) - roll_count * 0.03, 0.0), 2)
+    if turn_score(message, pawns) >= 28:
+        return 0.0
+    return round(max(base_roll_probability(message) - roll_count * 0.05, 0.0), 2)
 
 
-class BrainPlayer:
+class TestSubjectPlayer:
     def __init__(self) -> None:
         self.roll_count = 0
 
@@ -237,7 +305,7 @@ def run_player() -> int:
     if seeded is not None:
         random.seed(seeded)
 
-    player = BrainPlayer()
+    player = TestSubjectPlayer()
     print(f"({PLAYER_NAME}) ready", file=sys.stderr)
     for line in sys.stdin:
         message = json.loads(line)
@@ -248,23 +316,14 @@ def run_player() -> int:
             response = player.strategy(message)
         elif message_type == protocol.TURN_START:
             player.reset_turn()
-            print(f"({PLAYER_NAME}) turn start", file=sys.stderr)
-            response = None
-        elif message_type == protocol.MOVE:
-            print(f"({PLAYER_NAME}) move sums={message.get('sums')} pawns={message.get('pawns')}", file=sys.stderr)
             response = None
         elif message_type in {protocol.TURN_END, protocol.BURST}:
             player.reset_turn()
-            print(f"({PLAYER_NAME}) {message_type}", file=sys.stderr)
-            response = None
-        elif message_type == protocol.FINAL:
-            print(f"({PLAYER_NAME}) final winner={message.get('winner_name')}", file=sys.stderr)
             response = None
         elif message_type == protocol.BYE:
-            print(f"({PLAYER_NAME}) bye", file=sys.stderr)
             response = protocol.make_bye_response(PLAYER_NAME)
         else:
-            response = protocol.make_error_response(f"unknown message type: {message_type}")
+            response = None
 
         if response is not None:
             print(json.dumps(response, ensure_ascii=False), flush=True)
@@ -275,15 +334,3 @@ def run_player() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(run_player())
-
-
-# 実装指示文
-#・「どちらのレーンも上から2番目に自分のコマがある」「どちらかのレーンの上から2番目に自分のコマがある」「x x(xに入る数字のレーンの上から3番目までに自分のコマがある)」の3パターンは最優先でとる
-#・上の3パターンに当てはまらない限りできるだけ新しいポーンを出さず、すでにポーンが出ているレーンを優先する。
-#・新しいポーンを出すとき、優先順位を「4マス以上進んでいる自分以外のプレイヤーがいない6 7 8のいずれか」「上から2番目までに自分以外のプレイヤーがいない2 12のどちらか」「自分より上に他のプレイヤーがおらず、かつ自分のコマが既にあるレーン」「3 4 5 9 10 11のいずれかのレーン」「2 6 7 8 12のいずれかのレーン」の順番にする
-#・いずれかのポーンが登頂していて、かつ自分のポーンが3個ある場合は即座にストップする
-#・自分のポーンが3個になるまではストップしない
-#・誰もまだポイントを獲得していない時、ロール継続確率は6 7 8のレーンに自分のポーンが1つあれば80%、2つか3つあれば95%。それ以外は35%。
-#・6 7 8のレーンのいずれかが埋まっていたら、ロール継続確率は6 7 8のレーンに自分のポーンが1つあれば80%、2つあれば85%。6 7 8のレーンにポーンが無く、4 5 9 10のレーンのいずれかに自分のポーンが1つあれば70%、2つか3つあれば85%。それ以外は20%。
-#・4人のプレイヤーのポイントの合計が3を超えたら、ロール継続確率は6 7 8のレーンに自分のポーンが1つあれば85%、2つあれば100%。6 7 8のレーンにポーンが無く、4 5 9 10のレーンのいずれかに自分のポーンが1つあれば65%、2つか3つあれば90%。それ以外は25%。
-#・ロールするたび、ロール継続確率が5%低下（重複あり）。このロール継続確率の低下はターンエンドかバーストでリセット
