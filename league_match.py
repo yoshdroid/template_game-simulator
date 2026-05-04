@@ -47,7 +47,7 @@ def timestamp() -> str:
 
 def print_player_info(headers) -> None:
     for header in headers:
-        rate = (header.win * 1000 // header.play_times) / 10
+        rate = (header.win * 1000 // header.play_times) / 10 if header.play_times > 0 else 0.0
         print(f"{header.player_name} (ver.{read_player_version(header.path)}): WIN_RATE {rate}%")
 
 

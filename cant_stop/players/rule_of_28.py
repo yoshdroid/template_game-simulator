@@ -14,11 +14,11 @@ except ImportError:
 ########################################
 PLAYER_NAME = "rule_of_28"
 VERSION = "1.0"
-FIRST_GAME_DATE = ""
-LAST_GAME_DATE = ""
-PLAY_TIMES = 0
-WIN = 0
-POINT = 0
+FIRST_GAME_DATE = '2026/05/04 21:45'
+LAST_GAME_DATE = '2026/05/04 21:48'
+PLAY_TIMES = 26
+WIN = 3
+POINT = 25
 
 
 COLUMN_HEIGHTS = {
