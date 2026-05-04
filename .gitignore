@@ -5,6 +5,7 @@ pytest-cache-files-*/
 
 results/
 game.log
+tournament_results_*/
 
 .venv/
 venv/

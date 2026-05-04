@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from types import SimpleNamespace
 
 import league_match
 
@@ -40,3 +41,18 @@ def test_aggregate_results_counts_wins_and_points(monkeypatch):
     finally:
         log_path.unlink(missing_ok=True)
         root.rmdir()
+
+
+def test_tournament_winners_returns_all_tied_top_players():
+    headers = [
+        SimpleNamespace(player_name="Alice"),
+        SimpleNamespace(player_name="Bob"),
+        SimpleNamespace(player_name="Carol"),
+    ]
+    totals = {
+        "Alice": {"wins": 3, "points": 8},
+        "Bob": {"wins": 3, "points": 8},
+        "Carol": {"wins": 2, "points": 10},
+    }
+
+    assert league_match.tournament_winners(headers, totals) == ["Alice", "Bob"]

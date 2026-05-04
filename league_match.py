@@ -139,6 +139,11 @@ def aggregate_results(player_names: list[str]) -> dict[str, dict[str, int]]:
     return totals
 
 
+def tournament_winners(headers, totals: dict[str, dict[str, int]]) -> list[str]:
+    best = max((totals[header.player_name]["wins"], totals[header.player_name]["points"]) for header in headers)
+    return [header.player_name for header in headers if (totals[header.player_name]["wins"], totals[header.player_name]["points"]) == best]
+
+
 def archive_tournament_outputs(started_at: str) -> Path:
     archive_dir = ROOT_DIR / f"tournament_results_{started_at}"
     if archive_dir.exists():
@@ -167,8 +172,8 @@ def main() -> int:
             totals = aggregate_results([header.player_name for header in headers])
             for header in headers:
                 print(f"{header.player_name} gets {totals[header.player_name]['points']} point, {totals[header.player_name]['wins']} win")
-            winner = max(headers, key=lambda header: (totals[header.player_name]["wins"], totals[header.player_name]["points"], header.player_name))
-            print(f"%% Winner is {winner.player_name} %%")
+            winners = tournament_winners(headers, totals)
+            print(f"%% Winner is {', '.join(winners)} %%")
             archive_tournament_outputs(started_at)
         finally:
             restore_previous_outputs()

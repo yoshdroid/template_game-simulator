@@ -168,6 +168,12 @@ cant_stop/
 python cant_stop\master.py --player1 cant_stop\players\cautious_player.py --player2 cant_stop\players\aggressive_player.py --player3 cant_stop\players\theory_player.py --player4 cant_stop\players\random_player.py --seed 123 --casual_match
 ```
 
+大量実行やデバッグ用の主な追加引数:
+
+- `--silent`: 子プレイヤーの stderr ログを表示しない
+- `--no_result_json`: `results/` の結果JSONを作らず、`game.log` への1行追記だけ行う
+- `--trace_json`: 親子間のJSON通信を stderr にミラー表示する
+
 短く動作確認したい時:
 
 ```powershell
@@ -180,7 +186,7 @@ python cant_stop\master.py --player1 cant_stop\players\cautious_player.py --play
 python cant_stop\live_view.py --player1 cant_stop\players\cautious_player.py --player2 cant_stop\players\aggressive_player.py --player3 cant_stop\players\theory_player.py --player4 cant_stop\players\random_player.py --seed 123 --delay 350 --casual_match
 ```
 
-`--delay` はイベント表示間隔のミリ秒です。短く試す場合は `--step 30` も併用できます。
+`--delay` はイベント表示間隔のミリ秒です。短く試す場合は `--step 30` も併用できます。右側のプレイヤー一覧では、現在手番のプレイヤー名に下線を表示します。ゲーム終了後は `Esc` で画面を閉じられます。
 
 人間プレイヤーを1人混ぜる例:
 
@@ -214,3 +220,17 @@ python cant_stop\view_replay.py results\cant_stop_result_YYYYMMDD_HHMMSS.json --
 - `Esc`: 閉じる
 
 GUIは `cant_stop/background.png` を背景にして、2〜12の11本レーンを左から順に描画します。
+
+## Can't Stop 大会実行
+
+ルート直下の `league_match.py` で、4人の全席順を回す大会を実行できます。1ラウンドにつき `4 * 3 * 2 * 1 = 24` 試合を実行し、`--round n` の場合は seed `0` から `n - 1` まで繰り返します。
+
+```powershell
+python league_match.py --players codex.py brain.py theory_player.py random_player.py --round 3 --casual_match --no_result_json
+```
+
+`--players` は4名必須です。指定パスが見つからない場合は `cant_stop/players/` 配下のファイル名として解決します。
+
+大会中は既存の `game.log` と `results/` を `.save/` に退避し、大会結果は `tournament_results_YYYYMMDD_HHMMSS/` に保存します。終了後は退避した通常実行用の `game.log` と `results/` を元の場所へ戻します。
+
+大会結果は `game.log` から勝利数と取得ポイントを集計します。優勝判定は勝利数、次にポイント数で比較し、同点の場合は複数プレイヤーを同点優勝として表示します。
