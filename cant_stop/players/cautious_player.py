@@ -14,10 +14,10 @@ except ImportError:
 PLAYER_NAME = "腰抜けチキン"
 VERSION = "1.0"
 FIRST_GAME_DATE = '2026/05/03 01:00'
-LAST_GAME_DATE = '2026/05/03 21:44'
-PLAY_TIMES = 39
-WIN = 2
-POINT = 29
+LAST_GAME_DATE = '2026/05/04 22:03'
+PLAY_TIMES = 183
+WIN = 4
+POINT = 58
 
 
 def strategy(message):
