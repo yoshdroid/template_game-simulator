@@ -3,7 +3,7 @@ from __future__ import annotations
 from io import StringIO
 from pathlib import Path
 
-from cant_stop.master import PlayerProcessPort, parse_args, update_player_header
+from cant_stop.master import PlayerProcessPort, child_stderr_target, parse_args, update_player_header
 from cant_stop.simulator import (
     BoardState,
     advance_column,
@@ -157,6 +157,31 @@ def test_parse_args_accepts_trace_json_flag():
     )
 
     assert args.trace_json is True
+
+
+def test_parse_args_accepts_silent_and_no_result_json_flags():
+    args = parse_args(
+        [
+            "--player1",
+            "a.py",
+            "--player2",
+            "b.py",
+            "--player3",
+            "c.py",
+            "--player4",
+            "d.py",
+            "--silent",
+            "--no_result_json",
+        ]
+    )
+
+    assert args.silent is True
+    assert args.no_result_json is True
+
+
+def test_child_stderr_target_uses_devnull_in_silent_mode():
+    assert child_stderr_target(silent=False) is None
+    assert child_stderr_target(silent=True) is not None
 
 
 def test_player_process_port_trace_writes_json_to_sink():

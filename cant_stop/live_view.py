@@ -29,6 +29,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--delay", type=int, default=350, help="Milliseconds between event draws.")
     parser.add_argument("--timeout", type=float, default=5.0, help="Seconds to wait for each player response.")
     parser.add_argument("--burst_pause", type=float, default=0.5, help="Seconds to pause after a burst event.")
+    parser.add_argument("--silent", action="store_true", help="Suppress child player stderr logs.")
+    parser.add_argument("--no_result_json", action="store_true", help="Skip writing results/*.json and append only game.log.")
     args, unknown = parser.parse_known_args()
     players: dict[int, str] = {}
     index = 0
@@ -122,7 +124,10 @@ class LiveViewer:
                     raise FileNotFoundError(f"player file not found: {path}")
             headers = [read_player_header(path) for path in player_paths]
             casual_match = self.args.casual_match or len(set(player_paths)) != len(player_paths)
-            ports = [PlayerProcessPort(path, seed + index, timeout_seconds=self.args.timeout) for index, path in enumerate(player_paths)]
+            ports = [
+                PlayerProcessPort(path, seed + index, timeout_seconds=self.args.timeout, silent=self.args.silent)
+                for index, path in enumerate(player_paths)
+            ]
             result = run_game(
                 tuple(ports),
                 seed=seed,
@@ -130,7 +135,9 @@ class LiveViewer:
                 on_event=self.events.put,
                 burst_pause_seconds=self.args.burst_pause,
             )
-            result_path = write_result_file(result, Path(__file__).resolve().parent.parent / "results")
+            result_path = None
+            if not self.args.no_result_json:
+                result_path = write_result_file(result, Path(__file__).resolve().parent.parent / "results")
             for port in ports:
                 port.request(protocol.make_bye_request())
             if not casual_match:
@@ -138,7 +145,10 @@ class LiveViewer:
                 for header, player_result in zip(headers, result.results):
                     update_player_header(header.path, now_text, player_result.final_result, player_result.points)
             append_game_log(now, result)
-            self.events.put({"type": "saved", "path": str(result_path), "board": result.final_board})
+            if result_path is None:
+                self.events.put({"type": "saved", "path": "game.log", "board": result.final_board})
+            else:
+                self.events.put({"type": "saved", "path": str(result_path), "board": result.final_board})
         except Exception as exc:
             self.events.put({"type": "error", "error": str(exc), "board": self.last_board})
         finally:

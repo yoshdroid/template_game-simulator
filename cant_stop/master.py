@@ -35,6 +35,10 @@ class PlayerHeader:
     point: int
 
 
+def child_stderr_target(silent: bool) -> int | None:
+    return subprocess.DEVNULL if silent else None
+
+
 class PlayerProcessPort:
     def __init__(
         self,
@@ -43,6 +47,7 @@ class PlayerProcessPort:
         timeout_seconds: float = 5.0,
         trace_json: bool = False,
         trace_output: TextIO | None = None,
+        silent: bool = False,
     ) -> None:
         self.path = path
         self.name = read_player_header(path).player_name
@@ -55,7 +60,7 @@ class PlayerProcessPort:
             [sys.executable, str(path), "--seed", str(seed)],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
-            stderr=None,
+            stderr=child_stderr_target(silent),
             text=True,
             encoding="utf-8",
             bufsize=1,
@@ -120,6 +125,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--timeout", type=float, default=5.0, help="Seconds to wait for each player response.")
     parser.add_argument("--burst_pause", type=float, default=0.0, help="Seconds to pause after a burst event.")
     parser.add_argument("--trace_json", action="store_true", help="Mirror parent/player JSON Lines traffic to stderr.")
+    parser.add_argument("--silent", action="store_true", help="Suppress child player stderr logs.")
+    parser.add_argument("--no_result_json", action="store_true", help="Skip writing results/*.json and append only game.log.")
     args, unknown = parser.parse_known_args(argv)
     players: dict[int, str] = {}
     index = 0
@@ -246,12 +253,12 @@ def main(argv: list[str] | None = None) -> int:
     headers = [read_player_header(path) for path in player_paths]
     casual_match = args.casual_match or len(set(player_paths)) != len(player_paths)
     ports = [
-        PlayerProcessPort(path, seed + index, timeout_seconds=args.timeout, trace_json=args.trace_json)
+        PlayerProcessPort(path, seed + index, timeout_seconds=args.timeout, trace_json=args.trace_json, silent=args.silent)
         for index, path in enumerate(player_paths)
     ]
     try:
         result = run_game(tuple(ports), seed=seed, step=args.step, burst_pause_seconds=args.burst_pause)
-        result_path = write_result_file(result, ROOT_DIR / "results")
+        result_path = None if args.no_result_json else write_result_file(result, ROOT_DIR / "results")
         for port in ports:
             port.request(protocol.make_bye_request())
     except Exception as exc:
@@ -267,7 +274,8 @@ def main(argv: list[str] | None = None) -> int:
             update_player_header(header.path, now_text, player_result.final_result, player_result.points)
 
     append_game_log(now, result)
-    print(f"result: {result_path}")
+    if result_path is not None:
+        print(f"result: {result_path}")
     return 0
 
 
