@@ -18,12 +18,12 @@ except ImportError:
 # Player Information & Records
 ########################################
 PLAYER_NAME = "ドレッドノート"
-VERSION = "1.0"
-FIRST_GAME_DATE = ""
-LAST_GAME_DATE = ""
-PLAY_TIMES = 0
-WIN = 0
-POINT = 0
+VERSION = "1.1"
+FIRST_GAME_DATE = '2026/05/05 17:51'
+LAST_GAME_DATE = '2026/05/05 18:12'
+PLAY_TIMES = 276
+WIN = 100
+POINT = 499
 
 
 CENTER_LANES = {6, 7, 8}
@@ -54,9 +54,9 @@ def base_roll_probability(message: dict[str, Any]) -> float:
     danger_count = len(pawn_columns & DANGER_LANES)
 
     if center_count == 3:
-        return 0.95
+        return 1.10
     if center_count == 2:
-        return 0.70 if edge_count else 0.80
+        return 0.80 if edge_count else 0.90
     if center_count == 1:
         if danger_count == 0:
             return 0.70
@@ -64,9 +64,9 @@ def base_roll_probability(message: dict[str, Any]) -> float:
             return 0.50
         return 0.35
     if danger_count == 0:
-        return 0.60
+        return 0.55
     if danger_count == 1:
-        return 0.50
+        return 0.45
     if danger_count == 2:
         return 0.30
     return 0.20
