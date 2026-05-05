@@ -1,0 +1,1 @@
+"""Treasure Caravan simulator package."""
